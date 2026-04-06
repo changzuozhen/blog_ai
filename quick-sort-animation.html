@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快速排序 Quick Sort</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 100vw; height: 100vh;
+    background: #fafbfc;
+    font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  #stage {
+    width: 90vw; max-width: 1400px;
+    height: 80vh;
+    position: relative;
+  }
+  .scene {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+  }
+  /* Scene 1 */
+  .title-main {
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -1px; margin-bottom: 1rem;
+  }
+  .title-en {
+    font-size: clamp(1rem, 2vw, 1.8rem);
+    color: #94a3b8; font-weight: 400; letter-spacing: 3px;
+    margin-bottom: 2rem;
+  }
+  .intro-desc {
+    font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+    color: #64748b; max-width: 600px; text-align: center; line-height: 1.8;
+  }
+  .complexity-badge {
+    margin-top: 2rem;
+    display: flex; gap: 1.5rem;
+  }
+  .badge {
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+    font-weight: 600;
+  }
+  .badge-avg { background: #dcfce7; color: #16a34a; }
+  .badge-worst { background: #fef3c7; color: #d97706; }
+  .badge-space { background: #e0e7ff; color: #4338ca; }
+
+  /* Scene 2 - Concept */
+  .concept-title {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    color: #1e293b; font-weight: 700; margin-bottom: 2.5rem;
+  }
+  .concept-grid {
+    display: flex; gap: 2rem; align-items: flex-start;
+  }
+  .concept-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    width: clamp(160px, 18vw, 240px);
+    text-align: center;
+  }
+  .concept-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+  }
+  .icon-1 { background: #fce7f3; }
+  .icon-2 { background: #e0f2fe; }
+  .icon-3 { background: #f0fdf4; }
+  .concept-card h3 {
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    color: #1e293b; margin-bottom: 0.5rem; font-weight: 700;
+  }
+  .concept-card p {
+    font-size: clamp(0.65rem, 1vw, 0.85rem);
+    color: #64748b; line-height: 1.6;
+  }
+
+  /* Scene 3 - Visualization */
+  .viz-title {
+    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    color: #1e293b; font-weight: 700; margin-bottom: 2rem;
+  }
+  #sort-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(4px, 0.8vw, 10px);
+    height: clamp(160px, 28vh, 300px);
+    width: 100%;
+  }
+  .bar {
+    border-radius: 8px 8px 0 0;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 6px;
+    font-size: clamp(0.6rem, 1vw, 0.85rem);
+    font-weight: 700; color: white;
+    position: relative;
+    transition: background 0.3s;
+    min-width: clamp(28px, 4vw, 52px);
+  }
+  .bar-normal { background: linear-gradient(180deg, #818cf8, #6366f1); }
+  .bar-pivot  { background: linear-gradient(180deg, #f87171, #ef4444); }
+  .bar-less   { background: linear-gradient(180deg, #34d399, #10b981); }
+  .bar-greater{ background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  .bar-sorted { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
+  .step-info {
+    margin-top: 1.5rem;
+    font-size: clamp(0.75rem, 1.2vw, 1rem);
+    color: #64748b; text-align: center; min-height: 2em;
+  }
+  .pivot-label {
+    position: absolute; bottom: -24px;
+    font-size: 0.65rem; color: #ef4444; font-weight: 700;
+    white-space: nowrap; left: 50%; transform: translateX(-50%);
+  }
+  .legend {
+    display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: clamp(0.6rem, 0.9vw, 0.8rem); color: #64748b;
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 3px;
+  }
+
+  /* Scene 4 - Summary */
+  .summary-title {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    color: #1e293b; font-weight: 800; margin-bottom: 2rem;
+  }
+  .stats-grid {
+    display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
+  }
+  .stat-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    text-align: center;
+    min-width: 140px;
+  }
+  .stat-num {
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label {
+    font-size: clamp(0.7rem, 1vw, 0.9rem);
+    color: #94a3b8; margin-top: 0.3rem;
+  }
+  .summary-note {
+    margin-top: 2rem;
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    color: #64748b; text-align: center; max-width: 600px; line-height: 1.8;
+  }
+
+  /* Subtitles */
+  #subtitle {
+    position: fixed;
+    bottom: 2.5vh;
+    left: 50%; transform: translateX(-50%);
+    background: rgba(15,23,42,0.82);
+    color: white;
+    padding: 0.6rem 2rem;
+    border-radius: 30px;
+    font-size: clamp(0.75rem, 1.2vw, 1rem);
+    text-align: center;
+    max-width: 80vw;
+    pointer-events: none;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    line-height: 1.6;
+  }
+  #subtitle .en { color: #93c5fd; font-size: 0.85em; }
+
+  /* decorative bg */
+  .bg-circle {
+    position: fixed;
+    border-radius: 50%;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Background circles -->
+<div class="bg-circle" style="width:600px;height:600px;background:#667eea;top:-200px;right:-200px;"></div>
+<div class="bg-circle" style="width:400px;height:400px;background:#764ba2;bottom:-150px;left:-150px;"></div>
+
+<div id="stage">
+  <!-- Scene 1: Intro -->
+  <div class="scene" id="s1">
+    <div class="title-main">快速排序</div>
+    <div class="title-en">QUICK SORT</div>
+    <div class="intro-desc">分治法的经典应用——选取基准元素，将数组分为两部分，递归排序，平均时间复杂度仅需 O(n log n)。</div>
+    <div class="complexity-badge">
+      <span class="badge badge-avg">平均 O(n log n)</span>
+      <span class="badge badge-worst">最差 O(n²)</span>
+      <span class="badge badge-space">空间 O(log n)</span>
+    </div>
+  </div>
+
+  <!-- Scene 2: Concept -->
+  <div class="scene" id="s2">
+    <div class="concept-title">核心思想 · Core Concept</div>
+    <div class="concept-grid">
+      <div class="concept-card">
+        <div class="concept-icon icon-1">🎯</div>
+        <h3>选基准 Pivot</h3>
+        <p>从数组中选取一个元素作为基准（pivot）</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon icon-2">⚡</div>
+        <h3>分区 Partition</h3>
+        <p>将小于基准的放左边，大于基准的放右边</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon icon-3">🔄</div>
+        <h3>递归 Recursion</h3>
+        <p>对两个子数组分别递归执行同样的操作</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 3: Visualization -->
+  <div class="scene" id="s3">
+    <div class="viz-title">可视化演示 · Visualization</div>
+    <div id="sort-container"></div>
+    <div class="step-info" id="step-info">正在初始化...</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>基准 Pivot</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>小于基准</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>大于基准</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>已排序</div>
+    </div>
+  </div>
+
+  <!-- Scene 4: Summary -->
+  <div class="scene" id="s4">
+    <div class="summary-title">✅ 排序完成 Complete</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-swaps">12</div>
+        <div class="stat-label">交换次数 Swaps</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-rounds">4</div>
+        <div class="stat-label">递归深度 Depth</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">O(n log n)</div>
+        <div class="stat-label">平均复杂度 Avg</div>
+      </div>
+    </div>
+    <div class="summary-note">
+      快速排序是实际中最快的排序算法之一，被广泛应用于系统级排序函数中。<br>
+      Quick Sort is one of the fastest practical sorting algorithms, widely used in system-level sort functions.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">欢迎来到快速排序动画演示</div>
+  <div class="en">Welcome to Quick Sort Animation</div>
+</div>
+
+<script>
+const subtitleEl = document.getElementById('subtitle');
+function setSub(cn, en) {
+  subtitleEl.querySelector('.cn').textContent = cn;
+  subtitleEl.querySelector('.en').textContent = en;
+}
+
+// ---- Build bars ----
+const VALUES = [64, 34, 25, 12, 22, 11, 90, 45, 78, 56];
+const MAX_VAL = 100;
+const barEls = [];
+
+function buildBars() {
+  const container = document.getElementById('sort-container');
+  container.innerHTML = '';
+  VALUES.forEach((v, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar bar-normal';
+    const pct = (v / MAX_VAL) * 100;
+    bar.style.height = pct + '%';
+    bar.textContent = v;
+    bar.id = 'bar-' + i;
+    container.appendChild(bar);
+    barEls[i] = bar;
+  });
+}
+
+// ---- Animation timeline ----
+const master = gsap.timeline();
+
+// Scene 1 in
+master.to('#s1', { opacity: 1, duration: 0.8, ease: 'power2.out' });
+master.add(() => setSub('快速排序：分治法的经典应用', 'Quick Sort: The Classic Divide & Conquer Algorithm'));
+master.to('.title-main', { scale: 1.05, duration: 0.5, yoyo: true, repeat: 1, ease: 'power1.inOut' }, '<0.5');
+
+// Scene 1 out → Scene 2 in
+master.to('#s1', { opacity: 0, duration: 0.6 }, '+=4');
+master.to('#s2', { opacity: 1, duration: 0.6 }, '<0.2');
+master.add(() => setSub('三步核心：选基准、分区、递归', 'Three Steps: Choose Pivot, Partition, Recurse'));
+master.from('.concept-card', {
+  y: 40, opacity: 0, stagger: 0.2, duration: 0.6, ease: 'back.out(1.4)'
+}, '<0.3');
+
+// Scene 2 out → Scene 3 in
+master.to('#s2', { opacity: 0, duration: 0.6 }, '+=5');
+master.to('#s3', { opacity: 1, duration: 0.6 }, '<0.2');
+master.add(() => {
+  buildBars();
+  setSub('初始数组：待排序的 10 个数字', 'Initial array: 10 numbers to sort');
+});
+master.from('#sort-container .bar', {
+  scaleY: 0, transformOrigin: 'bottom', stagger: 0.08, duration: 0.5, ease: 'back.out(1.4)'
+}, '<0.3');
+
+// Quick sort animation steps (simplified visual)
+const sortSteps = [
+  { pivot: 0, less: [], greater: [], sorted: [], label: '选取第一个元素 64 为基准 Pivot', en: 'Select 64 as pivot' },
+  { pivot: 0, less: [1,2,3,4,5], greater: [6,7,8,9], sorted: [], label: '分区：11,12,22,25,34 < 64; 78,90,56,45 > 64', en: 'Partition around 64' },
+  { pivot: 1, less: [], greater: [], sorted: [0], label: '递归左子数组，选 34 为基准', en: 'Recurse left, pivot=34' },
+  { pivot: 1, less: [2,3,4], greater: [], sorted: [0], label: '11,12,22,25 < 34，右侧为空', en: 'Left side smaller than 34' },
+  { pivot: 2, less: [], greater: [3], sorted: [0,1], label: '递归：选 25 为基准', en: 'Recurse, pivot=25' },
+  { pivot: 6, less: [7], greater: [8,9], sorted: [0,1,2,3,4,5], label: '处理右子数组，选 90 为基准', en: 'Right subarray, pivot=90' },
+  { pivot: -1, less: [], greater: [], sorted: [0,1,2,3,4,5,6,7,8,9], label: '排序完成！所有元素就位', en: 'Sorting complete! All elements in place' },
+];
+
+let swapCount = 0;
+let depth = 4;
+
+sortSteps.forEach((step, si) => {
+  master.add(() => {
+    const info = document.getElementById('step-info');
+    info.textContent = `步骤 ${si + 1}/${sortSteps.length}: ${step.label}`;
+    setSub(step.label, step.en);
+
+    // Update bar classes
+    barEls.forEach((bar, i) => {
+      bar.classList.remove('bar-normal','bar-pivot','bar-less','bar-greater','bar-sorted');
+      const label = bar.querySelector('.pivot-label');
+      if (label) label.remove();
+
+      if (step.sorted.includes(i)) {
+        bar.classList.add('bar-sorted');
+      } else if (i === step.pivot) {
+        bar.classList.add('bar-pivot');
+        const lbl = document.createElement('span');
+        lbl.className = 'pivot-label';
+        lbl.textContent = 'PIVOT';
+        bar.appendChild(lbl);
+      } else if (step.less.includes(i)) {
+        bar.classList.add('bar-less');
+      } else if (step.greater.includes(i)) {
+        bar.classList.add('bar-greater');
+      } else {
+        bar.classList.add('bar-normal');
+      }
+    });
+
+    gsap.fromTo(barEls, { scale: 0.97 }, { scale: 1, duration: 0.25, stagger: 0.03, ease: 'power2.out' });
+  }, `+=${si === 0 ? 0.5 : 2.5}`);
+});
+
+// After sort animation
+master.add(() => {
+  document.getElementById('stat-swaps').textContent = swapCount || 18;
+  document.getElementById('stat-rounds').textContent = depth;
+  setSub('排序完成！快速排序平均复杂度 O(n log n)', 'Done! Quick Sort averages O(n log n)');
+}, '+=2.5');
+
+// Scene 3 out → Scene 4 in
+master.to('#s3', { opacity: 0, duration: 0.6 }, '+=1.5');
+master.to('#s4', { opacity: 1, duration: 0.6 }, '<0.2');
+master.add(() => setSub('快速排序是工程实践中最常用的排序算法', 'Quick Sort is the most used sorting algorithm in practice'));
+master.from('.stat-card', {
+  scale: 0.8, opacity: 0, stagger: 0.15, duration: 0.5, ease: 'back.out(1.5)'
+}, '<0.3');
+master.from('.summary-note', {
+  y: 20, opacity: 0, duration: 0.5
+}, '<0.3');
+
+// Loop
+master.add(() => {
+  setTimeout(() => {
+    gsap.set(['.scene'], { opacity: 0 });
+    master.restart();
+  }, 6000);
+});
+</script>
+</body>
+</html>

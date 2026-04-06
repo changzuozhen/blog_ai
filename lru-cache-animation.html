@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LRU 缓存 LRU Cache</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:100vw;height:100vh;background:#fafbfc;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#stage{width:90vw;max-width:1400px;height:84vh;position:relative;}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
+
+.t1{font-size:clamp(2rem,4vw,3.5rem);font-weight:800;background:linear-gradient(135deg,#6366f1,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem;}
+.t1-sub{font-size:clamp(.85rem,1.5vw,1.3rem);color:#6366f1;font-weight:600;margin-bottom:.5rem;}
+.t1-en{font-size:clamp(.72rem,1.3vw,1.2rem);color:#94a3b8;letter-spacing:3px;margin-bottom:1.2rem;}
+.t1-desc{font-size:clamp(.78rem,1.2vw,.98rem);color:#64748b;max-width:600px;text-align:center;line-height:1.8;}
+.bdgs{display:flex;gap:1rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center;}
+.bdg{padding:.4rem 1rem;border-radius:20px;font-size:clamp(.58rem,.85vw,.78rem);font-weight:600;}
+.b1{background:#e0e7ff;color:#4338ca;}.b2{background:#cffafe;color:#155e75;}.b3{background:#fce7f3;color:#9d174d;}
+
+.ct{font-size:clamp(1.2rem,2.4vw,1.9rem);color:#1e293b;font-weight:700;margin-bottom:1.5rem;}
+.struct-row{display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+.struct-card{background:white;border-radius:16px;padding:1.4rem 1.8rem;box-shadow:0 4px 16px rgba(0,0,0,.07);text-align:center;min-width:clamp(130px,16vw,200px);}
+.struct-card .ico{font-size:2rem;margin-bottom:.5rem;}
+.struct-card h3{font-size:clamp(.78rem,1.1vw,.95rem);color:#1e293b;font-weight:700;}
+.struct-card p{font-size:clamp(.58rem,.8vw,.74rem);color:#64748b;margin-top:.4rem;line-height:1.5;}
+.plus{font-size:2rem;color:#c4b5fd;align-self:center;}
+
+.vt{font-size:clamp(.95rem,1.8vw,1.5rem);color:#1e293b;font-weight:700;margin-bottom:.8rem;}
+.cache-vis{width:100%;max-width:800px;}
+.cache-label{display:flex;justify-content:space-between;font-size:clamp(.58rem,.8vw,.72rem);color:#94a3b8;margin-bottom:.3rem;padding:0 4px;}
+.cache-label span{font-weight:700;}
+.cache-list{
+  display:flex;gap:clamp(5px,.8vw,12px);align-items:center;justify-content:center;
+  min-height:clamp(60px,8vh,100px);
+  padding:.5rem;
+}
+.cache-node{
+  min-width:clamp(56px,7vw,90px);
+  background:white;border-radius:12px;
+  box-shadow:0 3px 14px rgba(0,0,0,.08);
+  display:flex;flex-direction:column;align-items:center;
+  padding:.7rem .8rem;border:2px solid #e2e8f0;
+  position:relative;
+}
+.cn-key{font-size:clamp(.6rem,.85vw,.78rem);color:#94a3b8;font-weight:600;}
+.cn-val{font-size:clamp(.95rem,1.4vw,1.2rem);color:#1e293b;font-weight:800;margin-top:.2rem;}
+.cn-label{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:.55rem;font-weight:700;white-space:nowrap;}
+.cn-hot{border-color:#6366f1;background:#eef2ff;}
+.cn-cold{border-color:#e2e8f0;background:#f8fafc;}
+.cn-evict{border-color:#ef4444;background:#fef2f2;}
+.cn-new{border-color:#22c55e;background:#f0fdf4;}
+.lru-arrow{font-size:1rem;color:#c4b5fd;padding:0 2px;}
+.lru-endlbl{font-size:clamp(.55rem,.75vw,.68rem);font-weight:700;background:#e0e7ff;color:#4338ca;padding:.2rem .5rem;border-radius:8px;}
+
+.hash-area{margin-top:.8rem;font-size:clamp(.6rem,.85vw,.78rem);color:#64748b;text-align:center;}
+.hash-map{display:inline-flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.3rem;}
+.hm-entry{background:white;border-radius:6px;padding:.25rem .7rem;box-shadow:0 1px 6px rgba(0,0,0,.06);font-weight:600;font-size:clamp(.55rem,.75vw,.7rem);}
+
+.step-msg7{margin-top:.7rem;font-size:clamp(.62rem,.88vw,.8rem);color:#64748b;text-align:center;min-height:1.8em;}
+.op-badge{display:inline-block;padding:.2rem .7rem;border-radius:12px;font-size:clamp(.55rem,.75vw,.7rem);font-weight:700;margin-right:.5rem;}
+.op-get{background:#e0e7ff;color:#4338ca;}
+.op-put{background:#dcfce7;color:#15803d;}
+.op-evict{background:#fee2e2;color:#991b1b;}
+
+.s4t{font-size:clamp(1.3rem,2.6vw,2.1rem);color:#1e293b;font-weight:800;margin-bottom:1.2rem;}
+.sts{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.sc{background:white;border-radius:18px;padding:1.2rem 1.6rem;box-shadow:0 4px 18px rgba(0,0,0,.07);text-align:center;min-width:110px;}
+.sn{font-size:clamp(1.3rem,2.5vw,2rem);font-weight:800;background:linear-gradient(135deg,#6366f1,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sl{font-size:clamp(.56rem,.78vw,.72rem);color:#94a3b8;margin-top:.3rem;}
+.s4-note{margin-top:1.5rem;font-size:clamp(.7rem,.95vw,.88rem);color:#64748b;text-align:center;max-width:600px;line-height:1.8;}
+
+#subtitle{position:fixed;bottom:2.5vh;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.82);color:white;padding:.55rem 1.8rem;border-radius:28px;font-size:clamp(.65rem,.95vw,.88rem);text-align:center;max-width:80vw;pointer-events:none;z-index:100;backdrop-filter:blur(8px);line-height:1.6;}
+#subtitle .en{color:#a5b4fc;font-size:.85em;}
+.bgc{position:fixed;border-radius:50%;opacity:.05;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="bgc" style="width:500px;height:500px;background:#6366f1;top:-170px;right:-150px;"></div>
+<div class="bgc" style="width:340px;height:340px;background:#06b6d4;bottom:-100px;left:-90px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">LRU 缓存</div>
+    <div class="t1-sub">最近最少使用算法</div>
+    <div class="t1-en">LEAST RECENTLY USED CACHE</div>
+    <div class="t1-desc">当缓存满时，淘汰最久未使用的数据。使用 HashMap + 双向链表实现，get/put 操作均为 O(1)。是操作系统页面置换和Redis缓存的核心算法。</div>
+    <div class="bdgs">
+      <span class="bdg b1">get O(1)</span>
+      <span class="bdg b2">put O(1)</span>
+      <span class="bdg b3">HashMap + 双向链表</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心数据结构 · Core Data Structure</div>
+    <div class="struct-row">
+      <div class="struct-card">
+        <div class="ico">🗂️</div>
+        <h3>HashMap</h3>
+        <p>key → 链表节点<br>O(1) 快速定位节点</p>
+      </div>
+      <div class="plus">+</div>
+      <div class="struct-card">
+        <div class="ico">🔗</div>
+        <h3>双向链表</h3>
+        <p>维护使用顺序<br>头部=最近使用<br>尾部=最久未用</p>
+      </div>
+      <div class="plus">=</div>
+      <div class="struct-card">
+        <div class="ico">⚡</div>
+        <h3>LRU Cache</h3>
+        <p>get: map查找+移到头部<br>put: 新建/更新+移头部<br>满时淘汰尾部节点</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">LRU 操作演示（容量 cap=3）</div>
+    <div class="cache-vis">
+      <div class="cache-label">
+        <span style="color:#6366f1">← 最近使用 (MRU)</span>
+        <span style="color:#ef4444">最久未用 (LRU) →</span>
+      </div>
+      <div class="cache-list" id="cache-list">
+        <div style="color:#94a3b8;font-size:.85rem;">空缓存</div>
+      </div>
+    </div>
+    <div class="hash-area">
+      HashMap: <div class="hash-map" id="hash-map">（空）</div>
+    </div>
+    <div class="step-msg7" id="step-msg7">容量=3，准备开始...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">⚡ LRU 实现完成</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">O(1)</div><div class="sl">get 时间 Time</div></div>
+      <div class="sc"><div class="sn">O(1)</div><div class="sl">put 时间 Time</div></div>
+      <div class="sc"><div class="sn">HashMap<br>+双向链表</div><div class="sl">数据结构</div></div>
+    </div>
+    <div class="s4-note">
+      LRU是面试必考题。HashMap保证O(1)查找，双向链表保证O(1)的插入/删除/移动到头部。两者结合实现完美的O(1)缓存。<br>
+      LRU is a must-know interview topic. HashMap for O(1) lookup, doubly linked list for O(1) move-to-head. Together: perfect O(1) cache.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">LRU 缓存算法动画演示</div>
+  <div class="en">LRU Cache Algorithm Animation</div>
+</div>
+
+<script>
+const SUB=document.getElementById('subtitle');
+function setSub(cn,en){SUB.querySelector('.cn').textContent=cn;SUB.querySelector('.en').textContent=en;}
+function setMsg7(t){document.getElementById('step-msg7').textContent=t;}
+
+const CAP=3;
+// Simulate LRU: array[0]=MRU, array[last]=LRU
+let cache=[]; // [{key,val}]
+let opLog='';
+
+function renderCache(highlight){
+  const list=document.getElementById('cache-list');
+  const hmap=document.getElementById('hash-map');
+  list.innerHTML='';
+  if(!cache.length){list.innerHTML='<div style="color:#94a3b8;font-size:.85rem;">空缓存</div>';hmap.innerHTML='（空）';return;}
+
+  cache.forEach((item,i)=>{
+    if(i>0){const a=document.createElement('div');a.className='lru-arrow';a.textContent='←→';list.appendChild(a);}
+    const node=document.createElement('div');
+    node.className='cache-node';
+    let cls='cn-cold';
+    if(highlight&&highlight.key===item.key) cls=highlight.type==='evict'?'cn-evict':'cn-hot';
+    else if(i===0) cls='cn-hot';
+    node.classList.add(cls);
+    node.innerHTML=`<div class="cn-key">key=${item.key}</div><div class="cn-val">${item.val}</div>`;
+    if(i===0){const l=document.createElement('div');l.className='cn-label';l.style.color='#6366f1';l.textContent='MRU HEAD';node.appendChild(l);}
+    if(i===cache.length-1&&cache.length===CAP){const l=document.createElement('div');l.className='cn-label';l.style.color='#ef4444';l.textContent='LRU TAIL';node.appendChild(l);}
+    list.appendChild(node);
+    gsap.from(node,{scale:.9,opacity:0,duration:.3,ease:'back.out(1.3)'});
+  });
+
+  hmap.innerHTML='';
+  cache.forEach(item=>{
+    const e=document.createElement('div');
+    e.className='hm-entry';e.textContent=`${item.key}→${item.val}`;
+    hmap.appendChild(e);
+  });
+}
+
+function lruGet(key){
+  const idx=cache.findIndex(x=>x.key===key);
+  if(idx===-1) return -1;
+  const node=cache.splice(idx,1)[0];
+  cache.unshift(node);
+  return node.val;
+}
+
+function lruPut(key,val){
+  const idx=cache.findIndex(x=>x.key===key);
+  let evicted=null;
+  if(idx!==-1) cache.splice(idx,1);
+  else if(cache.length>=CAP){ evicted=cache.pop(); }
+  cache.unshift({key,val});
+  return evicted;
+}
+
+const ops=[
+  {type:'put',key:1,val:100,msg:'put(1,100)：插入键1，加入缓存头部',en:'put(1,100): Insert key1 at head'},
+  {type:'put',key:2,val:200,msg:'put(2,200)：插入键2，加入头部，1移到后面',en:'put(2,200): Insert key2, 1 moves back'},
+  {type:'put',key:3,val:300,msg:'put(3,300)：插入键3，缓存已满（cap=3）',en:'put(3,300): Cache now full (cap=3)'},
+  {type:'get',key:1,msg:'get(1)：访问键1，命中！移到链表头部（1最近使用）',en:'get(1): Cache hit! Move key1 to head'},
+  {type:'put',key:4,val:400,msg:'put(4,400)：缓存满！淘汰LRU尾部节点（键2）',en:'put(4,400): Cache full! Evict LRU tail (key2)'},
+  {type:'get',key:2,msg:'get(2)：键2已被淘汰，缓存未命中，返回-1',en:'get(2): Miss! key2 was evicted, return -1'},
+  {type:'put',key:5,val:500,msg:'put(5,500)：淘汰最久未用的键3',en:'put(5,500): Evict LRU key3'},
+  {type:'get',key:4,msg:'get(4)：命中！键4移到头部',en:'get(4): Hit! key4 moves to head'},
+];
+
+const tl=gsap.timeline();
+
+// S1
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('LRU缓存：淘汰最久未用，HashMap+双向链表','LRU Cache: Evict least recently used, HashMap+DLL'));
+tl.from('.t1,.t1-sub',{y:-30,opacity:0,stagger:.15,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en,.t1-desc',{y:20,opacity:0,stagger:.2,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+// S2
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('HashMap+双向链表：两者结合实现O(1)全操作','HashMap + DLL = O(1) for all operations'));
+tl.from('.struct-card',{x:-30,opacity:0,stagger:.2,duration:.6,ease:'back.out(1.4)'},'<.3');
+
+// S3
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{ cache=[]; renderCache(); setSub('空缓存，容量=3，开始演示LRU操作','Empty cache, capacity=3, start LRU operations'); setMsg7('初始化空缓存...'); });
+
+ops.forEach((op,si)=>{
+  tl.add(()=>{
+    let highlight=null;
+    if(op.type==='put'){
+      const evicted=lruPut(op.key,op.val);
+      if(evicted) highlight={key:evicted.key,type:'evict'};
+      else highlight={key:op.key,type:'new'};
+    } else {
+      const result=lruGet(op.key);
+      if(result!==-1) highlight={key:op.key,type:'hit'};
+    }
+    renderCache(highlight);
+    setMsg7(`步骤${si+1}: ${op.msg}`);
+    setSub(op.msg,op.en);
+  },'+=2.2');
+});
+
+// S4
+tl.to('#s3',{opacity:0,duration:.5},'+=2');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('LRU：系统级缓存的核心算法，面试必考','LRU: Core algorithm for system-level caching'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{setTimeout(()=>{gsap.set('.scene',{opacity:0});tl.restart();},6000);});
+</script>
+</body>
+</html>

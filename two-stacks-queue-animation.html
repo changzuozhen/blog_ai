@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用两个栈实现队列 Two Stacks Queue</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:100vw;height:100vh;background:#fafbfc;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#stage{width:90vw;max-width:1400px;height:84vh;position:relative;}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
+
+.t1{font-size:clamp(1.8rem,3.5vw,3.2rem);font-weight:800;background:linear-gradient(135deg,#f97316,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem;}
+.t1-sub{font-size:clamp(.85rem,1.5vw,1.3rem);color:#f97316;font-weight:600;margin-bottom:.6rem;}
+.t1-en{font-size:clamp(.72rem,1.3vw,1.2rem);color:#94a3b8;letter-spacing:3px;margin-bottom:1.2rem;}
+.t1-desc{font-size:clamp(.78rem,1.2vw,.98rem);color:#64748b;max-width:580px;text-align:center;line-height:1.8;}
+.bdgs{display:flex;gap:1rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center;}
+.bdg{padding:.4rem 1rem;border-radius:20px;font-size:clamp(.58rem,.85vw,.78rem);font-weight:600;}
+.b1{background:#ffedd5;color:#c2410c;}.b2{background:#dcfce7;color:#15803d;}.b3{background:#e0f2fe;color:#0369a1;}
+
+.ct{font-size:clamp(1.2rem,2.4vw,1.9rem);color:#1e293b;font-weight:700;margin-bottom:1.5rem;}
+.contrast-row{display:flex;gap:3rem;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+.contrast-box{background:white;border-radius:16px;padding:1.4rem 1.8rem;box-shadow:0 4px 16px rgba(0,0,0,.07);text-align:center;min-width:200px;}
+.contrast-box .ico{font-size:2rem;margin-bottom:.5rem;}
+.contrast-box h3{font-size:clamp(.78rem,1.1vw,.95rem);color:#1e293b;font-weight:700;margin-bottom:.5rem;}
+.contrast-box .tags{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;}
+.tag{padding:.2rem .6rem;border-radius:10px;font-size:clamp(.55rem,.78vw,.7rem);font-weight:600;}
+.tag-o{background:#ffedd5;color:#c2410c;}
+.tag-q{background:#dcfce7;color:#15803d;}
+.mid-arr{font-size:2rem;color:#c4b5fd;align-self:center;}
+
+.vt{font-size:clamp(.95rem,1.8vw,1.5rem);color:#1e293b;font-weight:700;margin-bottom:1rem;}
+.stacks-area{display:flex;gap:clamp(2rem,5vw,5rem);align-items:flex-end;justify-content:center;width:100%;margin-bottom:.8rem;}
+.stack-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem;}
+.stack-label{font-size:clamp(.7rem,1vw,.88rem);font-weight:700;color:#475569;margin-bottom:.3rem;}
+.stack-title{font-size:clamp(.62rem,.88vw,.78rem);color:#94a3b8;}
+.stack-box{
+  width:clamp(80px,10vw,130px);
+  min-height:clamp(80px,14vh,180px);
+  border:2px solid #e2e8f0;border-radius:0 0 10px 10px;
+  background:#f8fafc;position:relative;
+  display:flex;flex-direction:column-reverse;padding:4px;
+  gap:4px;
+}
+.stack-item{
+  width:100%;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(.78rem,1.2vw,1rem);font-weight:700;
+  padding:clamp(5px,0.7vw,8px) 0;
+  color:white;
+}
+.si-in{background:linear-gradient(135deg,#f97316,#fb923c);}
+.si-out{background:linear-gradient(135deg,#22c55e,#16a34a);}
+.stack-open{
+  border-bottom:none;
+  border-top:2px dashed #cbd5e1;
+  position:relative;
+}
+.stack-open::after{
+  content:'TOP';position:absolute;top:-20px;left:50%;transform:translateX(-50%);
+  font-size:.55rem;color:#94a3b8;font-weight:700;
+}
+.arrow-area{display:flex;align-items:center;padding-bottom:10px;}
+.transfer-arr{font-size:2rem;color:#94a3b8;}
+
+.queue-info{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.qi{background:white;border-radius:10px;padding:.5rem 1rem;box-shadow:0 2px 10px rgba(0,0,0,.06);font-size:clamp(.6rem,.85vw,.78rem);}
+.qi span{font-weight:700;color:#f97316;}
+.step-msg6{margin-top:.7rem;font-size:clamp(.62rem,.88vw,.8rem);color:#64748b;text-align:center;min-height:1.8em;}
+
+.s4t{font-size:clamp(1.3rem,2.6vw,2.1rem);color:#1e293b;font-weight:800;margin-bottom:1.2rem;}
+.sts{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.sc{background:white;border-radius:18px;padding:1.2rem 1.6rem;box-shadow:0 4px 18px rgba(0,0,0,.07);text-align:center;min-width:110px;}
+.sn{font-size:clamp(1.3rem,2.5vw,2rem);font-weight:800;background:linear-gradient(135deg,#f97316,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sl{font-size:clamp(.56rem,.78vw,.72rem);color:#94a3b8;margin-top:.3rem;}
+.s4-note{margin-top:1.5rem;font-size:clamp(.7rem,.95vw,.88rem);color:#64748b;text-align:center;max-width:580px;line-height:1.8;}
+
+#subtitle{position:fixed;bottom:2.5vh;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.82);color:white;padding:.55rem 1.8rem;border-radius:28px;font-size:clamp(.65rem,.95vw,.88rem);text-align:center;max-width:80vw;pointer-events:none;z-index:100;backdrop-filter:blur(8px);line-height:1.6;}
+#subtitle .en{color:#86efac;font-size:.85em;}
+.bgc{position:fixed;border-radius:50%;opacity:.05;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="bgc" style="width:500px;height:500px;background:#f97316;top:-170px;right:-150px;"></div>
+<div class="bgc" style="width:340px;height:340px;background:#22c55e;bottom:-100px;left:-90px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">两个栈实现队列</div>
+    <div class="t1-sub">经典数据结构转换题</div>
+    <div class="t1-en">TWO STACKS IMPLEMENT QUEUE</div>
+    <div class="t1-desc">栈是后进先出（LIFO），队列是先进先出（FIFO）。用两个栈配合，通过"倒腾"元素实现队列的 push/pop/peek 操作。</div>
+    <div class="bdgs">
+      <span class="bdg b1">push O(1)</span>
+      <span class="bdg b2">pop 均摊O(1)</span>
+      <span class="bdg b3">空间 O(n)</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心思想 · Core Concept</div>
+    <div class="contrast-row">
+      <div class="contrast-box">
+        <div class="ico">📚</div>
+        <h3>栈 Stack (LIFO)</h3>
+        <div class="tags">
+          <span class="tag tag-o">后进先出</span>
+          <span class="tag tag-o">Last In First Out</span>
+        </div>
+        <p style="font-size:.75rem;color:#64748b;margin-top:.8rem">push 入栈 → 从顶部压入<br>pop 出栈 → 从顶部弹出</p>
+      </div>
+      <div class="mid-arr">⇆</div>
+      <div class="contrast-box">
+        <div class="ico">🚌</div>
+        <h3>队列 Queue (FIFO)</h3>
+        <div class="tags">
+          <span class="tag tag-q">先进先出</span>
+          <span class="tag tag-q">First In First Out</span>
+        </div>
+        <p style="font-size:.75rem;color:#64748b;margin-top:.8rem">enqueue 入队 → 从尾部加入<br>dequeue 出队 → 从头部取出</p>
+      </div>
+    </div>
+    <p style="margin-top:1.5rem;font-size:clamp(.72rem,1vw,.88rem);color:#64748b;text-align:center">
+      🔑 关键：<strong>inStack</strong> 负责 push；<strong>outStack</strong> 负责 pop，outStack 为空时才从 inStack 搬运
+    </p>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">可视化演示 · Visualization</div>
+    <div class="stacks-area">
+      <div class="stack-wrap">
+        <div class="stack-label">inStack（入栈）</div>
+        <div class="stack-title">push 时使用</div>
+        <div class="stack-box stack-open" id="instack"></div>
+      </div>
+      <div class="arrow-area"><div class="transfer-arr" id="transfer-arr">→</div></div>
+      <div class="stack-wrap">
+        <div class="stack-label">outStack（出栈）</div>
+        <div class="stack-title">pop 时使用</div>
+        <div class="stack-box stack-open" id="outstack"></div>
+      </div>
+    </div>
+    <div class="queue-info">
+      <div class="qi">队列逻辑顺序: <span id="v-queue">空</span></div>
+      <div class="qi">上次操作: <span id="v-op">—</span></div>
+    </div>
+    <div class="step-msg6" id="step-msg6">准备开始演示...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">✅ 两栈实现队列完成</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">push O(1)</div><div class="sl">入队复杂度</div></div>
+      <div class="sc"><div class="sn">pop 均摊O(1)</div><div class="sl">出队复杂度</div></div>
+      <div class="sc"><div class="sn">2个栈</div><div class="sl">空间占用</div></div>
+    </div>
+    <div class="s4-note">
+      每个元素最多经历一次 inStack→outStack 的搬运，因此均摊时间复杂度为 O(1)。<br>
+      Each element is moved from inStack to outStack at most once, so amortized O(1) per operation.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">用两个栈实现队列·动画演示</div>
+  <div class="en">Two Stacks Implement Queue · Animation</div>
+</div>
+
+<script>
+const SUB=document.getElementById('subtitle');
+function setSub(cn,en){SUB.querySelector('.cn').textContent=cn;SUB.querySelector('.en').textContent=en;}
+function setMsg6(t){document.getElementById('step-msg6').textContent=t;}
+
+let inArr=[], outArr=[];
+
+function renderStacks(){
+  const ins=document.getElementById('instack');
+  const outs=document.getElementById('outstack');
+  ins.innerHTML='';
+  outs.innerHTML='';
+  inArr.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='stack-item si-in';
+    d.textContent=v; ins.appendChild(d);
+    gsap.from(d,{x:-20,opacity:0,duration:.3,ease:'back.out(1.3)'});
+  });
+  outArr.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='stack-item si-out';
+    d.textContent=v; outs.appendChild(d);
+    gsap.from(d,{x:20,opacity:0,duration:.3,ease:'back.out(1.3)'});
+  });
+  const qArr=[...outArr].reverse().concat([...inArr]);
+  document.getElementById('v-queue').textContent=qArr.length?qArr.join('→'):'空';
+}
+
+function push(val){ inArr.push(val); renderStacks(); document.getElementById('v-op').textContent=`push(${val})`; }
+function pop(){
+  if(!outArr.length){
+    // transfer
+    while(inArr.length) outArr.push(inArr.pop());
+    gsap.to('#transfer-arr',{color:'#f97316',scale:1.4,duration:.3,yoyo:true,repeat:1});
+  }
+  const val=outArr.pop(); renderStacks();
+  document.getElementById('v-op').textContent=`pop() = ${val}`;
+  return val;
+}
+
+// Sequence of operations to animate
+const ops=[
+  {type:'push',val:1,msg:'push(1)：元素1进入 inStack',en:'push(1): element 1 enters inStack'},
+  {type:'push',val:2,msg:'push(2)：元素2进入 inStack',en:'push(2): element 2 enters inStack'},
+  {type:'push',val:3,msg:'push(3)：元素3进入 inStack',en:'push(3): element 3 enters inStack'},
+  {type:'pop',msg:'pop()：outStack为空，将inStack全部搬到outStack，再出栈1',en:'pop(): outStack empty, transfer all to outStack, pop 1'},
+  {type:'push',val:4,msg:'push(4)：元素4进入 inStack',en:'push(4): element 4 enters inStack'},
+  {type:'pop',msg:'pop()：outStack不空，直接弹出2',en:'pop(): outStack not empty, directly pop 2'},
+  {type:'pop',msg:'pop()：outStack弹出3',en:'pop(): outStack pops 3'},
+  {type:'pop',msg:'pop()：outStack为空，搬运inStack，弹出4',en:'pop(): transfer again, pop 4'},
+];
+
+const tl=gsap.timeline();
+
+// S1
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('两个栈实现队列：LIFO 变 FIFO 的巧妙设计','Two Stacks Queue: Transform LIFO to FIFO'));
+tl.from('.t1,.t1-sub',{y:-30,opacity:0,stagger:.15,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en,.t1-desc',{y:20,opacity:0,stagger:.2,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+// S2
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('关键：inStack入，outStack出，空时才搬运','Key: Push to inStack, pop from outStack'));
+tl.from('.contrast-box',{x:-30,opacity:0,stagger:.3,duration:.6,ease:'back.out(1.4)'},'<.3');
+
+// S3
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{ inArr=[]; outArr=[]; renderStacks(); setSub('初始：两个空栈，开始演示操作','Init: Two empty stacks, start operations'); setMsg6('两个栈均为空，准备开始'); });
+
+ops.forEach((op,si)=>{
+  tl.add(()=>{
+    if(op.type==='push') push(op.val);
+    else pop();
+    setMsg6(`步骤${si+1}: ${op.msg}`);
+    setSub(op.msg,op.en);
+  },'+=2.2');
+});
+
+// S4
+tl.to('#s3',{opacity:0,duration:.5},'+=2');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('巧妙利用两个栈的互补，实现先进先出','Ingeniously use two stacks to achieve FIFO'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{setTimeout(()=>{gsap.set('.scene',{opacity:0});tl.restart();},6000);});
+</script>
+</body>
+</html>

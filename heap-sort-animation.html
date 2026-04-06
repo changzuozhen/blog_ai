@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>堆排序 Heap Sort</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:100vw;height:100vh;background:#fafbfc;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#stage{width:90vw;max-width:1400px;height:84vh;position:relative;}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
+
+.t1{font-size:clamp(2.2rem,4.5vw,4rem);font-weight:800;background:linear-gradient(135deg,#dc2626,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.7rem;}
+.t1-en{font-size:clamp(.85rem,1.6vw,1.5rem);color:#94a3b8;letter-spacing:4px;margin-bottom:1.4rem;}
+.t1-desc{font-size:clamp(.8rem,1.3vw,1rem);color:#64748b;max-width:580px;text-align:center;line-height:1.8;}
+.bdgs{display:flex;gap:1rem;margin-top:1.4rem;flex-wrap:wrap;justify-content:center;}
+.bdg{padding:.4rem 1rem;border-radius:20px;font-size:clamp(.6rem,.9vw,.82rem);font-weight:600;}
+.b1{background:#fee2e2;color:#991b1b;}.b2{background:#ffedd5;color:#c2410c;}.b3{background:#dcfce7;color:#15803d;}
+
+.ct{font-size:clamp(1.3rem,2.5vw,2rem);color:#1e293b;font-weight:700;margin-bottom:1.8rem;}
+.heap-steps{display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;}
+.hs{background:white;border-radius:16px;padding:1.3rem 1.6rem;box-shadow:0 4px 16px rgba(0,0,0,.07);text-align:center;min-width:clamp(120px,15vw,185px);}
+.hs .ico{font-size:1.8rem;margin-bottom:.5rem;}
+.hs h3{font-size:clamp(.75rem,1.1vw,.93rem);color:#1e293b;font-weight:700;}
+.hs p{font-size:clamp(.58rem,.8vw,.74rem);color:#64748b;margin-top:.4rem;line-height:1.5;}
+
+.vt{font-size:clamp(.95rem,1.8vw,1.5rem);color:#1e293b;font-weight:700;margin-bottom:.8rem;}
+.heap-area{display:flex;gap:2vw;align-items:flex-start;justify-content:center;width:100%;}
+.tree-side{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;}
+.tree-label{font-size:clamp(.6rem,.85vw,.78rem);font-weight:700;color:#94a3b8;margin-bottom:.4rem;}
+#heap-svg{width:100%;max-width:400px;height:clamp(160px,28vh,260px);}
+
+.arr-side{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;}
+.arr-label{font-size:clamp(.6rem,.85vw,.78rem);font-weight:700;color:#94a3b8;margin-bottom:.4rem;}
+#arr-bars{display:flex;align-items:flex-end;gap:clamp(3px,.5vw,7px);height:clamp(120px,20vh,200px);}
+.bar{border-radius:6px 6px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-size:clamp(.55rem,.8vw,.72rem);font-weight:700;color:white;min-width:clamp(22px,3vw,42px);}
+.bar-norm{background:linear-gradient(180deg,#f97316,#dc2626);}
+.bar-heap{background:linear-gradient(180deg,#fbbf24,#f59e0b);}
+.bar-sorted{background:linear-gradient(180deg,#34d399,#10b981);}
+.bar-active{background:linear-gradient(180deg,#c084fc,#a855f7);}
+
+.step-msg8{margin-top:.7rem;font-size:clamp(.62rem,.88vw,.8rem);color:#64748b;text-align:center;min-height:1.8em;}
+.phase-badge{display:inline-block;padding:.25rem .8rem;border-radius:12px;font-size:clamp(.55rem,.78vw,.72rem);font-weight:700;margin-right:.5rem;}
+.phase-build{background:#fef3c7;color:#92400e;}
+.phase-sort{background:#dcfce7;color:#065f46;}
+
+.s4t{font-size:clamp(1.3rem,2.6vw,2.1rem);color:#1e293b;font-weight:800;margin-bottom:1.2rem;}
+.sts{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.sc{background:white;border-radius:18px;padding:1.2rem 1.6rem;box-shadow:0 4px 18px rgba(0,0,0,.07);text-align:center;min-width:110px;}
+.sn{font-size:clamp(1.3rem,2.5vw,2rem);font-weight:800;background:linear-gradient(135deg,#dc2626,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sl{font-size:clamp(.56rem,.78vw,.72rem);color:#94a3b8;margin-top:.3rem;}
+.s4-note{margin-top:1.5rem;font-size:clamp(.7rem,.95vw,.88rem);color:#64748b;text-align:center;max-width:580px;line-height:1.8;}
+
+#subtitle{position:fixed;bottom:2.5vh;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.82);color:white;padding:.55rem 1.8rem;border-radius:28px;font-size:clamp(.65rem,.95vw,.88rem);text-align:center;max-width:80vw;pointer-events:none;z-index:100;backdrop-filter:blur(8px);line-height:1.6;}
+#subtitle .en{color:#fca5a5;font-size:.85em;}
+.bgc{position:fixed;border-radius:50%;opacity:.05;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="bgc" style="width:500px;height:500px;background:#dc2626;top:-170px;right:-150px;"></div>
+<div class="bgc" style="width:340px;height:340px;background:#f97316;bottom:-100px;left:-90px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">堆排序</div>
+    <div class="t1-en">HEAP SORT</div>
+    <div class="t1-desc">利用堆这种数据结构来进行排序——先将数组构建为最大堆，再反复取出堆顶（最大值）放到末尾，实现原地排序，时间 O(n log n)。</div>
+    <div class="bdgs">
+      <span class="bdg b1">时间 O(n log n)</span>
+      <span class="bdg b2">空间 O(1) 原地</span>
+      <span class="bdg b3">不稳定排序</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心步骤 · Core Steps</div>
+    <div class="heap-steps">
+      <div class="hs"><div class="ico">🏗️</div><h3>建堆 Build Heap</h3><p>从最后一个非叶节点开始，对每个节点执行向下调整（heapify），时间 O(n)</p></div>
+      <div class="hs"><div class="ico">👑</div><h3>取堆顶 Extract Max</h3><p>堆顶即最大值，与末尾元素交换，从堆中移除</p></div>
+      <div class="hs"><div class="ico">🔄</div><h3>重新堆化 Heapify</h3><p>对新堆顶执行 sift-down，恢复堆的性质，时间 O(log n)</p></div>
+      <div class="hs"><div class="ico">🔁</div><h3>重复 Repeat</h3><p>重复 n-1 次取顶+堆化，完成排序</p></div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">堆排序可视化 · Heap Sort Visualization</div>
+    <div class="heap-area">
+      <div class="tree-side">
+        <div class="tree-label">🌳 堆结构（树形）</div>
+        <svg id="heap-svg" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="he" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+              <polygon points="0 0,6 2.5,0 5" fill="#cbd5e1"/>
+            </marker>
+          </defs>
+          <!-- edges -->
+          <line x1="200" y1="36" x2="120" y2="90" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#he)"/>
+          <line x1="200" y1="36" x2="280" y2="90" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#he)"/>
+          <line x1="120" y1="110" x2="72" y2="168" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#he)"/>
+          <line x1="120" y1="110" x2="168" y2="168" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#he)"/>
+          <line x1="280" y1="110" x2="232" y2="168" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#he)"/>
+          <line x1="280" y1="110" x2="328" y2="168" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#he)"/>
+          <!-- nodes -->
+          <circle id="hn1" cx="200" cy="22" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht1" x="200" y="28" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+          <circle id="hn2" cx="120" cy="96" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht2" x="120" y="102" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+          <circle id="hn3" cx="280" cy="96" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht3" x="280" y="102" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+          <circle id="hn4" cx="72" cy="172" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht4" x="72" y="178" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+          <circle id="hn5" cx="168" cy="172" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht5" x="168" y="178" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+          <circle id="hn6" cx="232" cy="172" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht6" x="232" y="178" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+          <circle id="hn7" cx="328" cy="172" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text id="ht7" x="328" y="178" text-anchor="middle" font-size="14" font-weight="800" fill="#92400e"></text>
+        </svg>
+      </div>
+      <div class="arr-side">
+        <div class="arr-label">📊 数组视图（每步状态）</div>
+        <div id="arr-bars"></div>
+      </div>
+    </div>
+    <div class="step-msg8" id="step-msg8">准备开始堆排序演示...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">✅ 堆排序完成 Heap Sort Done!</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">O(n log n)</div><div class="sl">时间复杂度 Time</div></div>
+      <div class="sc"><div class="sn">O(1)</div><div class="sl">空间复杂度 Space</div></div>
+      <div class="sc"><div class="sn">2阶段</div><div class="sl">建堆+排序</div></div>
+    </div>
+    <div class="s4-note">
+      堆排序是唯一能同时达到 O(n log n) 时间和 O(1) 空间的比较排序算法，常用于 TopK 问题。<br>
+      Heap Sort uniquely achieves O(n log n) time with O(1) space, widely used for Top-K problems.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">堆排序动画演示</div>
+  <div class="en">Heap Sort Animation</div>
+</div>
+
+<script>
+const SUB=document.getElementById('subtitle');
+function setSub(cn,en){SUB.querySelector('.cn').textContent=cn;SUB.querySelector('.en').textContent=en;}
+function setMsg8(t){document.getElementById('step-msg8').textContent=t;}
+
+// We'll manually define a few key states for the heap sort
+// Array: [4, 10, 3, 5, 1, 8, 7]
+// After build max heap: [10, 5, 8, 4, 1, 3, 7]  (approx)
+// Sort steps
+
+const states = [
+  {
+    arr:[4,10,3,5,1,8,7],
+    sorted:[],
+    active:[],
+    msg:'初始数组：[4,10,3,5,1,8,7]，开始建堆',
+    en:'Initial: [4,10,3,5,1,8,7], start building heap',
+    phase:'build'
+  },
+  {
+    arr:[4,10,8,5,1,3,7],
+    sorted:[],
+    active:[2,5],
+    msg:'建堆：对节点6(index2)执行heapify，3↔8',
+    en:'Build: heapify node at idx2, swap 3↔8',
+    phase:'build'
+  },
+  {
+    arr:[10,5,8,4,1,3,7],
+    sorted:[],
+    active:[0,1],
+    msg:'建堆：对根节点执行heapify，4↔10，最大堆建立完成',
+    en:'Build: heapify root 4↔10, max-heap ready',
+    phase:'build'
+  },
+  {
+    arr:[8,5,7,4,1,3,10],
+    sorted:[6],
+    active:[0,6],
+    msg:'排序1：根(10)与末尾(7)交换，10归位，对新根堆化',
+    en:'Sort 1: Swap root(10) with last(7), 10 in place',
+    phase:'sort'
+  },
+  {
+    arr:[7,5,3,4,1,8,10],
+    sorted:[5,6],
+    active:[0,5],
+    msg:'排序2：8归位，堆大小缩减',
+    en:'Sort 2: 8 in place, heap shrinks',
+    phase:'sort'
+  },
+  {
+    arr:[5,4,3,7,1,8,10],
+    sorted:[3,4,5,6],
+    active:[0,3],
+    msg:'继续排序：7,5依次归位',
+    en:'Continue: 7,5 placed in order',
+    phase:'sort'
+  },
+  {
+    arr:[1,3,4,5,7,8,10],
+    sorted:[0,1,2,3,4,5,6],
+    active:[],
+    msg:'堆排序完成！数组已完全有序：[1,3,4,5,7,8,10]',
+    en:'Done! Sorted: [1,3,4,5,7,8,10]',
+    phase:'done'
+  },
+];
+
+const MAX_VAL=10;
+const treeIds=[null,1,2,3,4,5,6,7]; // 1-indexed
+
+function renderState(s){
+  // Update bars
+  const barsEl=document.getElementById('arr-bars');
+  barsEl.innerHTML='';
+  s.arr.forEach((v,i)=>{
+    const b=document.createElement('div');
+    b.className='bar';
+    const pct=(v/MAX_VAL)*100;
+    b.style.height=pct+'%';
+    b.textContent=v;
+    if(s.sorted.includes(i)) b.classList.add('bar-sorted');
+    else if(s.active.includes(i)) b.classList.add('bar-active');
+    else b.classList.add(s.phase==='build'?'bar-heap':'bar-norm');
+    barsEl.appendChild(b);
+    gsap.from(b,{scaleY:0,transformOrigin:'bottom',duration:.3,ease:'back.out(1.3)'});
+  });
+
+  // Update tree nodes
+  s.arr.forEach((v,i)=>{
+    const nodeIdx=i+1;
+    if(nodeIdx>7) return;
+    const txt=document.getElementById('ht'+nodeIdx);
+    const circ=document.getElementById('hn'+nodeIdx);
+    if(!txt||!circ) return;
+    txt.textContent=v;
+    let fill='#fef3c7',stroke='#f59e0b';
+    if(s.sorted.includes(i)){fill='#d1fae5';stroke='#10b981';}
+    else if(s.active.includes(i)){fill='#ede9fe';stroke='#8b5cf6';}
+    gsap.to(circ,{attr:{fill,stroke},duration:.3});
+  });
+}
+
+const tl=gsap.timeline();
+
+// S1
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('堆排序：先建最大堆，再逐步提取最大值','Heap Sort: Build max-heap, then extract max repeatedly'));
+tl.from('.t1',{y:-30,opacity:0,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en',{y:20,opacity:0,duration:.6},'<.2');
+tl.from('.t1-desc',{y:20,opacity:0,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+// S2
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('两阶段：建堆O(n) + 排序O(n log n)','Two phases: Build O(n) + Sort O(n log n)'));
+tl.from('.hs',{y:30,opacity:0,stagger:.15,duration:.6,ease:'back.out(1.4)'},'<.3');
+
+// S3
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{renderState(states[0]);setSub('初始数组，即将建最大堆','Initial array, about to build max-heap');setMsg8(states[0].msg);});
+tl.from('#heap-svg circle',{scale:0,opacity:0,stagger:.08,duration:.35,ease:'back.out(1.5)'},'<.3');
+
+states.slice(1).forEach((s,si)=>{
+  tl.add(()=>{
+    renderState(s);
+    setSub(s.msg,s.en);
+    setMsg8(`步骤${si+2}: ${s.msg}`);
+  },'+=2.2');
+});
+
+// S4
+tl.to('#s3',{opacity:0,duration:.5},'+=2');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('堆排序：原地O(n log n)，适合TopK场景','Heap Sort: In-place O(n log n), great for Top-K'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{setTimeout(()=>{gsap.set('.scene',{opacity:0});tl.restart();},6000);});
+</script>
+</body>
+</html>

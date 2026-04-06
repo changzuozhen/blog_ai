@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二叉树层序遍历 BFS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  width:100vw;height:100vh;background:#fafbfc;
+  font-family:'Segoe UI','PingFang SC',sans-serif;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+}
+#stage{width:90vw;max-width:1400px;height:84vh;position:relative;}
+.scene{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+}
+/* S1 */
+.t1{
+  font-size:clamp(2rem,4vw,3.8rem);font-weight:800;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:.7rem;
+}
+.t1-en{font-size:clamp(.85rem,1.6vw,1.5rem);color:#94a3b8;letter-spacing:3px;margin-bottom:1.4rem;}
+.t1-desc{font-size:clamp(.8rem,1.3vw,1rem);color:#64748b;max-width:560px;text-align:center;line-height:1.8;}
+.bdgs{display:flex;gap:1rem;margin-top:1.4rem;flex-wrap:wrap;justify-content:center;}
+.bdg{padding:.4rem 1rem;border-radius:20px;font-size:clamp(.6rem,.9vw,.82rem);font-weight:600;}
+.bp{background:#ede9fe;color:#6d28d9;}.bq{background:#fce7f3;color:#9d174d;}.bw{background:#dcfce7;color:#15803d;}
+
+/* S2 */
+.ct{font-size:clamp(1.3rem,2.5vw,2rem);color:#1e293b;font-weight:700;margin-bottom:1.8rem;}
+.steps-row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;justify-content:center;}
+.step-box{background:white;border-radius:14px;padding:1.2rem 1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.07);text-align:center;min-width:clamp(110px,13vw,170px);}
+.step-box .ico{font-size:1.8rem;margin-bottom:.5rem;}
+.step-box h3{font-size:clamp(.75rem,1vw,.9rem);color:#1e293b;font-weight:700;}
+.step-box p{font-size:clamp(.58rem,.8vw,.74rem);color:#64748b;margin-top:.3rem;line-height:1.5;}
+.sarr{font-size:1.6rem;color:#c4b5fd;}
+
+/* S3 */
+.vt{font-size:clamp(1rem,2vw,1.7rem);color:#1e293b;font-weight:700;margin-bottom:.8rem;}
+#bfs-svg{width:100%;max-width:820px;height:clamp(200px,38vh,360px);}
+.queue-area{margin-top:.6rem;width:100%;max-width:820px;}
+.queue-label{font-size:clamp(.65rem,.9vw,.82rem);color:#64748b;margin-bottom:.4rem;text-align:left;padding-left:4px;}
+#queue-display{
+  display:flex;gap:6px;min-height:38px;
+  flex-wrap:wrap;
+}
+.q-item{
+  width:clamp(32px,3.8vw,48px);height:clamp(32px,3.8vw,48px);
+  border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:white;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(.78rem,1.1vw,.95rem);font-weight:700;
+  box-shadow:0 2px 8px rgba(139,92,246,.3);
+}
+.result-seq{margin-top:.6rem;font-size:clamp(.7rem,1vw,.88rem);color:#1e293b;font-weight:600;}
+.step-msg2{margin-top:.5rem;font-size:clamp(.65rem,.9vw,.82rem);color:#64748b;text-align:center;min-height:1.8em;}
+
+/* S4 */
+.s4t{font-size:clamp(1.4rem,2.8vw,2.3rem);color:#1e293b;font-weight:800;margin-bottom:1.4rem;}
+.sts{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.sc{background:white;border-radius:18px;padding:1.3rem 1.8rem;box-shadow:0 4px 18px rgba(0,0,0,.07);text-align:center;min-width:120px;}
+.sn{font-size:clamp(1.5rem,3vw,2.4rem);font-weight:800;background:linear-gradient(135deg,#8b5cf6,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sl{font-size:clamp(.58rem,.8vw,.75rem);color:#94a3b8;margin-top:.3rem;}
+.s4-note{margin-top:1.6rem;font-size:clamp(.72rem,1vw,.9rem);color:#64748b;text-align:center;max-width:580px;line-height:1.8;}
+
+/* subtitle */
+#subtitle{
+  position:fixed;bottom:2.5vh;left:50%;transform:translateX(-50%);
+  background:rgba(15,23,42,.82);color:white;
+  padding:.55rem 1.8rem;border-radius:28px;
+  font-size:clamp(.68rem,1vw,.9rem);text-align:center;
+  max-width:80vw;pointer-events:none;z-index:100;
+  backdrop-filter:blur(8px);line-height:1.6;
+}
+#subtitle .en{color:#c4b5fd;font-size:.85em;}
+.bgc{position:fixed;border-radius:50%;opacity:.05;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="bgc" style="width:500px;height:500px;background:#8b5cf6;top:-170px;right:-150px;"></div>
+<div class="bgc" style="width:340px;height:340px;background:#ec4899;bottom:-100px;left:-90px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">二叉树层序遍历</div>
+    <div class="t1-en">BINARY TREE BFS</div>
+    <div class="t1-desc">广度优先搜索（BFS）——借助队列，从根节点开始，按层从左到右访问每个节点，确保同一层的节点先于下一层被访问。</div>
+    <div class="bdgs">
+      <span class="bdg bp">时间 O(n)</span>
+      <span class="bdg bq">空间 O(n)</span>
+      <span class="bdg bw">使用队列 Queue</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心思想 · Core Concept</div>
+    <div class="steps-row">
+      <div class="step-box"><div class="ico">🌱</div><h3>入队根节点</h3><p>将根节点加入队列</p></div>
+      <div class="sarr">→</div>
+      <div class="step-box"><div class="ico">📤</div><h3>出队访问</h3><p>取出队首节点，记录其值</p></div>
+      <div class="sarr">→</div>
+      <div class="step-box"><div class="ico">👶</div><h3>子节点入队</h3><p>将其左右子节点依次入队</p></div>
+      <div class="sarr">→</div>
+      <div class="step-box"><div class="ico">🔁</div><h3>重复</h3><p>重复直到队列为空</p></div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">层序遍历可视化 · BFS Visualization</div>
+    <svg id="bfs-svg" viewBox="0 0 820 300" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+          <polygon points="0 0,7 2.5,0 5" fill="#cbd5e1"/>
+        </marker>
+      </defs>
+      <!-- Edges -->
+      <line x1="410" y1="46" x2="245" y2="116" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="410" y1="46" x2="575" y2="116" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="245" y1="150" x2="163" y2="210" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="245" y1="150" x2="327" y2="210" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="575" y1="150" x2="493" y2="210" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="575" y1="150" x2="657" y2="210" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <!-- Level labels -->
+      <text x="18" y="36" font-size="11" fill="#94a3b8" font-weight="600">L0</text>
+      <text x="18" y="140" font-size="11" fill="#94a3b8" font-weight="600">L1</text>
+      <text x="18" y="240" font-size="11" fill="#94a3b8" font-weight="600">L2</text>
+      <!-- Nodes -->
+      <circle id="bfs-n1" cx="410" cy="28" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t1" x="410" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">1</text>
+      <circle id="bfs-n2" cx="245" cy="133" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t2" x="245" y="139" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">2</text>
+      <circle id="bfs-n3" cx="575" cy="133" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t3" x="575" y="139" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">3</text>
+      <circle id="bfs-n4" cx="163" cy="233" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t4" x="163" y="239" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">4</text>
+      <circle id="bfs-n5" cx="327" cy="233" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t5" x="327" y="239" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">5</text>
+      <circle id="bfs-n6" cx="493" cy="233" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t6" x="493" y="239" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">6</text>
+      <circle id="bfs-n7" cx="657" cy="233" r="26" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+      <text id="bfs-t7" x="657" y="239" text-anchor="middle" font-size="16" font-weight="700" fill="#475569">7</text>
+      <!-- Visit order badge -->
+      <circle id="bfs-n1-ord" cx="436" cy="8" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n1-ordt" x="436" y="13" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">1</text>
+      <circle id="bfs-n2-ord" cx="271" cy="113" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n2-ordt" x="271" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">2</text>
+      <circle id="bfs-n3-ord" cx="601" cy="113" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n3-ordt" x="601" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">3</text>
+      <circle id="bfs-n4-ord" cx="189" cy="213" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n4-ordt" x="189" y="218" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">4</text>
+      <circle id="bfs-n5-ord" cx="353" cy="213" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n5-ordt" x="353" y="218" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">5</text>
+      <circle id="bfs-n6-ord" cx="519" cy="213" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n6-ordt" x="519" y="218" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">6</text>
+      <circle id="bfs-n7-ord" cx="683" cy="213" r="11" fill="#8b5cf6" opacity="0"/>
+      <text id="bfs-n7-ordt" x="683" y="218" text-anchor="middle" font-size="11" font-weight="700" fill="white" opacity="0">7</text>
+    </svg>
+    <div class="queue-area">
+      <div class="queue-label">队列 Queue:</div>
+      <div id="queue-display"></div>
+    </div>
+    <div class="result-seq">遍历结果 Result: <span id="result-seq" style="color:#8b5cf6;font-size:1.1em;"></span></div>
+    <div class="step-msg2" id="step-msg2">准备开始...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">✅ 层序遍历完成 BFS Done!</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">7</div><div class="sl">节点总数 Nodes</div></div>
+      <div class="sc"><div class="sn">3</div><div class="sl">树的层数 Levels</div></div>
+      <div class="sc"><div class="sn">1-2-3-4-5-6-7</div><div class="sl">遍历顺序 Order</div></div>
+    </div>
+    <div class="s4-note">
+      层序遍历（BFS）使用队列保证每层从左到右顺序访问，常用于求树的宽度、层序打印等。<br>
+      BFS with a queue ensures left-to-right per-level traversal, ideal for finding tree width or level-order printing.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">二叉树层序遍历（BFS）动画演示</div>
+  <div class="en">Binary Tree BFS Animation</div>
+</div>
+
+<script>
+const SUB=document.getElementById('subtitle');
+function setSub(cn,en){SUB.querySelector('.cn').textContent=cn;SUB.querySelector('.en').textContent=en;}
+function setMsg2(t){document.getElementById('step-msg2').textContent=t;}
+
+const nodeOrder=[1,2,3,4,5,6,7];
+let resultStr='';
+
+function activateNode(idx,visitOrder){
+  const ci=document.getElementById('bfs-n'+idx);
+  const ord=document.getElementById('bfs-n'+idx+'-ord');
+  const ordt=document.getElementById('bfs-n'+idx+'-ordt');
+  if(ordt) ordt.textContent=visitOrder;
+  gsap.to(ci,{attr:{fill:'#8b5cf6',stroke:'#6d28d9'},duration:.35});
+  gsap.to([ord,ordt],{opacity:1,duration:.3});
+  resultStr+=(resultStr?'→':'')+idx;
+  document.getElementById('result-seq').textContent=resultStr;
+}
+
+function updateQueue(items){
+  const qd=document.getElementById('queue-display');
+  qd.innerHTML='';
+  items.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='q-item'; d.textContent=v;
+    qd.appendChild(d);
+    gsap.from(d,{scale:0,opacity:0,duration:.3,ease:'back.out(1.5)'});
+  });
+}
+
+const bfsSteps=[
+  {queue:[1],visit:null,msg:'根节点 1 入队',en:'Enqueue root node 1'},
+  {queue:[2,3],visit:1,ord:1,msg:'出队 1，访问，子节点 2,3 入队',en:'Dequeue 1, visit, enqueue children 2,3'},
+  {queue:[3,4,5],visit:2,ord:2,msg:'出队 2，访问，子节点 4,5 入队',en:'Dequeue 2, visit, enqueue children 4,5'},
+  {queue:[4,5,6,7],visit:3,ord:3,msg:'出队 3，访问，子节点 6,7 入队',en:'Dequeue 3, visit, enqueue children 6,7'},
+  {queue:[5,6,7],visit:4,ord:4,msg:'出队 4，访问，叶节点无子节点',en:'Dequeue 4, visit, leaf node has no children'},
+  {queue:[6,7],visit:5,ord:5,msg:'出队 5，访问，叶节点',en:'Dequeue 5, visit, leaf node'},
+  {queue:[7],visit:6,ord:6,msg:'出队 6，访问，叶节点',en:'Dequeue 6, visit, leaf node'},
+  {queue:[],visit:7,ord:7,msg:'出队 7，访问，队列为空，遍历完成！',en:'Dequeue 7, visit, queue empty — done!'},
+];
+
+const tl=gsap.timeline();
+
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('层序遍历（BFS）：按层逐级访问','BFS: Visit nodes level by level'));
+tl.from('.t1',{y:-30,opacity:0,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en',{y:20,opacity:0,duration:.6},'<.2');
+tl.from('.t1-desc',{y:20,opacity:0,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('队列是BFS的核心数据结构','Queue is the core data structure for BFS'));
+tl.from('.step-box',{y:30,opacity:0,stagger:.15,duration:.55,ease:'back.out(1.4)'},'<.3');
+tl.from('.sarr',{opacity:0,stagger:.15,duration:.3},'<.2');
+
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{resultStr='';setSub('初始：空队列，准备从根节点开始','Init: Empty queue, start from root');setMsg2('初始化，队列为空');updateQueue([]);});
+tl.from('[id^=bfs-n]',{scale:0,opacity:0,stagger:.08,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+bfsSteps.forEach((s,si)=>{
+  tl.add(()=>{
+    if(s.visit) activateNode(s.visit,s.ord);
+    updateQueue(s.queue);
+    setMsg2(`步骤${si+1}: ${s.msg}`);
+    setSub(s.msg,s.en);
+  },'+=2');
+});
+
+tl.to('#s3',{opacity:0,duration:.5},'+=2.5');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('BFS完成：1→2→3→4→5→6→7','BFS Complete: 1→2→3→4→5→6→7'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{setTimeout(()=>{gsap.set('.scene',{opacity:0});tl.restart();},6000);});
+</script>
+</body>
+</html>

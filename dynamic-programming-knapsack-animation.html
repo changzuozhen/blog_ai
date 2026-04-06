@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动态规划 01背包 Dynamic Programming Knapsack</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:100vw;height:100vh;background:#fafbfc;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#stage{width:90vw;max-width:1400px;height:84vh;position:relative;}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
+
+.t1{font-size:clamp(1.8rem,3.5vw,3.2rem);font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.6rem;}
+.t1-sub{font-size:clamp(1rem,2vw,1.8rem);color:#f59e0b;font-weight:700;margin-bottom:.6rem;}
+.t1-en{font-size:clamp(.75rem,1.4vw,1.3rem);color:#94a3b8;letter-spacing:3px;margin-bottom:1.2rem;}
+.t1-desc{font-size:clamp(.78rem,1.2vw,.98rem);color:#64748b;max-width:580px;text-align:center;line-height:1.8;}
+.bdgs{display:flex;gap:1rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center;}
+.bdg{padding:.4rem 1rem;border-radius:20px;font-size:clamp(.58rem,.85vw,.78rem);font-weight:600;}
+.b1{background:#fef3c7;color:#92400e;}.b2{background:#fee2e2;color:#991b1b;}.b3{background:#e0f2fe;color:#075985;}
+
+.ct{font-size:clamp(1.2rem,2.4vw,1.9rem);color:#1e293b;font-weight:700;margin-bottom:1.6rem;}
+.formula-box{background:white;border-radius:18px;padding:1.5rem 2.5rem;box-shadow:0 4px 20px rgba(0,0,0,.08);text-align:center;margin-bottom:1.5rem;}
+.formula{font-family:monospace;font-size:clamp(.78rem,1.2vw,1rem);color:#1e293b;line-height:2;}
+.formula .hl{color:#ef4444;font-weight:700;}
+.items-row{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.item-card{background:white;border-radius:14px;padding:1rem 1.4rem;box-shadow:0 3px 14px rgba(0,0,0,.07);text-align:center;min-width:100px;}
+.item-card .emoji{font-size:2rem;margin-bottom:.4rem;}
+.item-card .iname{font-size:clamp(.7rem,1vw,.85rem);font-weight:700;color:#1e293b;}
+.item-card .iinfo{font-size:clamp(.58rem,.8vw,.72rem);color:#64748b;margin-top:.2rem;}
+
+.vt{font-size:clamp(.95rem,1.8vw,1.5rem);color:#1e293b;font-weight:700;margin-bottom:.7rem;}
+.items-legend{display:flex;gap:1.2rem;margin-bottom:.8rem;flex-wrap:wrap;justify-content:center;}
+.il{font-size:clamp(.58rem,.8vw,.72rem);color:#64748b;}
+.il span{font-weight:700;color:#f59e0b;}
+#dp-table{border-collapse:collapse;font-size:clamp(.62rem,.9vw,.82rem);}
+#dp-table th{background:#f8fafc;padding:clamp(4px,0.5vw,8px) clamp(6px,0.8vw,14px);border:1px solid #e2e8f0;color:#475569;font-weight:700;text-align:center;}
+#dp-table td{padding:clamp(4px,0.5vw,8px) clamp(6px,0.8vw,14px);border:1px solid #e2e8f0;text-align:center;font-weight:600;color:#334155;min-width:clamp(28px,3vw,46px);}
+.cell-active{background:#fef3c7 !important;outline:2px solid #f59e0b;}
+.cell-result{background:#d1fae5 !important;color:#065f46 !important;}
+.cell-taken{background:#fee2e2 !important;color:#991b1b !important;}
+.step-msg4{margin-top:.7rem;font-size:clamp(.65rem,.9vw,.82rem);color:#64748b;text-align:center;min-height:1.8em;}
+
+.s4t{font-size:clamp(1.3rem,2.6vw,2.1rem);color:#1e293b;font-weight:800;margin-bottom:1.2rem;}
+.sts{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.sc{background:white;border-radius:18px;padding:1.2rem 1.6rem;box-shadow:0 4px 18px rgba(0,0,0,.07);text-align:center;min-width:110px;}
+.sn{font-size:clamp(1.4rem,2.8vw,2.2rem);font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sl{font-size:clamp(.56rem,.78vw,.72rem);color:#94a3b8;margin-top:.3rem;}
+.s4-note{margin-top:1.5rem;font-size:clamp(.7rem,.95vw,.88rem);color:#64748b;text-align:center;max-width:580px;line-height:1.8;}
+
+#subtitle{position:fixed;bottom:2.5vh;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.82);color:white;padding:.55rem 1.8rem;border-radius:28px;font-size:clamp(.65rem,.95vw,.88rem);text-align:center;max-width:80vw;pointer-events:none;z-index:100;backdrop-filter:blur(8px);line-height:1.6;}
+#subtitle .en{color:#fcd34d;font-size:.85em;}
+.bgc{position:fixed;border-radius:50%;opacity:.05;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="bgc" style="width:500px;height:500px;background:#f59e0b;top:-170px;right:-150px;"></div>
+<div class="bgc" style="width:340px;height:340px;background:#ef4444;bottom:-100px;left:-90px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">动态规划</div>
+    <div class="t1-sub">01 背包问题</div>
+    <div class="t1-en">DYNAMIC PROGRAMMING · 0/1 KNAPSACK</div>
+    <div class="t1-desc">每件物品只能选或不选，在背包容量限制内，如何使总价值最大？DP 将大问题分解为子问题，通过状态转移逐步求解最优答案。</div>
+    <div class="bdgs">
+      <span class="bdg b1">时间 O(n·W)</span>
+      <span class="bdg b2">空间 O(n·W)</span>
+      <span class="bdg b3">状态转移</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心思想 · Core Concept</div>
+    <div class="formula-box">
+      <div class="formula">
+        <span style="color:#94a3b8">// 状态转移方程 State Transition</span><br>
+        dp[i][j] = <span class="hl">max</span>(dp[i-1][j], dp[i-1][j-w[i]] + v[i])<br>
+        <span style="color:#94a3b8">// 不放第i件       放第i件</span><br>
+        <span style="color:#94a3b8">// 条件：j >= w[i]</span>
+      </div>
+    </div>
+    <div class="items-row">
+      <div class="item-card"><div class="emoji">💎</div><div class="iname">物品1</div><div class="iinfo">重1 / 价值15</div></div>
+      <div class="item-card"><div class="emoji">📦</div><div class="iname">物品2</div><div class="iinfo">重3 / 价值20</div></div>
+      <div class="item-card"><div class="emoji">🔮</div><div class="iname">物品3</div><div class="iinfo">重4 / 价值30</div></div>
+      <div class="item-card"><div class="emoji">🏆</div><div class="iname">物品4</div><div class="iinfo">重5 / 价值40</div></div>
+      <div class="item-card"><div class="emoji">🎒</div><div class="iname">背包</div><div class="iinfo">容量 = 7</div></div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">DP 表格填充过程 · DP Table Fill</div>
+    <div class="items-legend">
+      <div class="il">物品: <span>💎w=1,v=15</span> | <span>📦w=3,v=20</span> | <span>🔮w=4,v=30</span> | <span>🏆w=5,v=40</span> | 背包容量W=7</div>
+    </div>
+    <table id="dp-table">
+      <thead>
+        <tr id="thead-row"></tr>
+      </thead>
+      <tbody id="dp-tbody"></tbody>
+    </table>
+    <div class="step-msg4" id="step-msg4">初始化 DP 表格...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">🏆 最优解已找到 Optimal Found!</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">55</div><div class="sl">最大价值 Max Value</div></div>
+      <div class="sc"><div class="sn">💎+📦+🏆</div><div class="sl">选取物品 Items Chosen</div></div>
+      <div class="sc"><div class="sn">1+3+5=9>7?</div><div class="sl">💎+🔮: 1+4=5≤7 ✓</div></div>
+    </div>
+    <div class="s4-note">
+      DP 通过 dp[i][j] 记录前i件物品在容量j时的最优值，避免重复计算，最终 dp[n][W] 即为答案。<br>
+      DP records dp[i][j] = best value using first i items with capacity j, avoiding redundant computation.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">动态规划·01背包问题动画演示</div>
+  <div class="en">Dynamic Programming · 0/1 Knapsack Animation</div>
+</div>
+
+<script>
+const SUB=document.getElementById('subtitle');
+function setSub(cn,en){SUB.querySelector('.cn').textContent=cn;SUB.querySelector('.en').textContent=en;}
+function setMsg4(t){document.getElementById('step-msg4').textContent=t;}
+
+// items: {w, v}
+const items=[{w:0,v:0},{w:1,v:15},{w:3,v:20},{w:4,v:30},{w:5,v:40}];// 0-indexed dummy
+const W=7;
+const n=4;
+
+// Build dp[0..n][0..W]
+const dp=[];
+for(let i=0;i<=n;i++){dp[i]=[];for(let j=0;j<=W;j++)dp[i][j]=0;}
+for(let i=1;i<=n;i++){
+  for(let j=0;j<=W;j++){
+    dp[i][j]=dp[i-1][j];
+    if(j>=items[i].w && dp[i-1][j-items[i].w]+items[i].v > dp[i][j])
+      dp[i][j]=dp[i-1][j-items[i].w]+items[i].v;
+  }
+}
+
+function buildTable(){
+  const thead=document.getElementById('thead-row');
+  const tbody=document.getElementById('dp-tbody');
+  thead.innerHTML='<th>物品\\容量</th>';
+  for(let j=0;j<=W;j++) thead.innerHTML+=`<th>${j}</th>`;
+  tbody.innerHTML='';
+  const itemEmojis=['','💎','📦','🔮','🏆'];
+  for(let i=0;i<=n;i++){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="background:#f8fafc;font-weight:700;color:#475569">${i===0?'初始':itemEmojis[i]+'item'+i}</td>`;
+    for(let j=0;j<=W;j++){
+      const td=document.createElement('td');
+      td.id=`dp-${i}-${j}`;
+      td.textContent='0';
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+const tl=gsap.timeline();
+
+// S1
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('01背包：选或不选，状态转移求最优','0/1 Knapsack: Select or skip, DP state transition'));
+tl.from('.t1,.t1-sub',{y:-30,opacity:0,stagger:.15,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en,.t1-desc',{y:20,opacity:0,stagger:.2,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+// S2
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('状态转移：每格取"放"与"不放"的最大值','Transition: Each cell = max(skip, take)'));
+tl.from('.formula-box',{y:20,opacity:0,duration:.6,ease:'power2.out'},'<.3');
+tl.from('.item-card',{scale:0,opacity:0,stagger:.12,duration:.4,ease:'back.out(1.5)'},'<.4');
+
+// S3
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{buildTable();setSub('填充DP表格：逐行计算每个状态的最优值','Filling DP table row by row');setMsg4('初始化表格（第0行全为0）');});
+tl.from('#dp-table',{scale:.95,opacity:0,duration:.5,ease:'back.out(1.2)'},'<.3');
+
+// Animate filling
+const fillSequence=[];
+for(let i=1;i<=n;i++){
+  for(let j=0;j<=W;j++){
+    fillSequence.push({i,j,val:dp[i][j],
+      msg:`物品${i}，容量${j}: dp[${i}][${j}]=${dp[i][j]}${j>=items[i].w&&dp[i-1][j-items[i].w]+items[i].v>dp[i-1][j]?' (放入最优)':' (不放最优)'}`,
+      en:`Item${i}, cap${j}: dp=${dp[i][j]}`
+    });
+  }
+}
+
+// Batch rows for speed
+for(let i=1;i<=n;i++){
+  tl.add(()=>{
+    const itemEmojis=['','💎','📦','🔮','🏆'];
+    setMsg4(`处理第 ${i} 件物品 ${itemEmojis[i]}（重量=${items[i].w}，价值=${items[i].v}）`);
+    setSub(`物品${i}${itemEmojis[i]}：重${items[i].w}，价值${items[i].v}`,`Item${i}: weight=${items[i].w}, value=${items[i].v}`);
+    for(let j=0;j<=W;j++){
+      const td=document.getElementById(`dp-${i}-${j}`);
+      if(!td) return;
+      td.textContent=dp[i][j];
+      const isTaken=j>=items[i].w && dp[i-1][j-items[i].w]+items[i].v > dp[i-1][j];
+      if(dp[i][j]>0&&dp[i][j]===dp[n][W]){td.classList.add('cell-result');}
+      else if(isTaken){td.classList.add('cell-taken');}
+      else{td.classList.add('cell-active');}
+      gsap.from(td,{scale:1.3,duration:.2,ease:'power2.out'});
+    }
+  },'+=2.2');
+}
+
+// Highlight result
+tl.add(()=>{
+  const tdFinal=document.getElementById(`dp-${n}-${W}`);
+  if(tdFinal){ gsap.to(tdFinal,{scale:1.3,duration:.3,yoyo:true,repeat:2}); }
+  setMsg4(`最优答案：dp[${n}][${W}] = ${dp[n][W]}，选 💎+🔮 物品，总价值55`);
+  setSub(`最大价值 = ${dp[n][W]}，最优方案：物品1+3`,`Max value = ${dp[n][W]}, optimal: items 1+3`);
+},'+=1.5');
+
+// S4
+tl.to('#s3',{opacity:0,duration:.5},'+=2');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('DP避免重复子问题，是01背包的标准解法','DP avoids redundant subproblems — standard 0/1 knapsack solution'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{setTimeout(()=>{gsap.set('.scene',{opacity:0});tl.restart();},6000);});
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二分查找 Binary Search</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  width:100vw; height:100vh;
+  background:#fafbfc;
+  font-family:'Segoe UI','PingFang SC',sans-serif;
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+#stage { width:90vw; max-width:1400px; height:82vh; position:relative; }
+.scene {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+}
+
+/* S1 */
+.t1 {
+  font-size:clamp(2.5rem,5vw,4.5rem); font-weight:800;
+  background:linear-gradient(135deg,#f97316,#ec4899);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin-bottom:.8rem;
+}
+.t1-en { font-size:clamp(1rem,2vw,1.8rem); color:#94a3b8; letter-spacing:4px; margin-bottom:1.5rem; }
+.t1-desc { font-size:clamp(.85rem,1.4vw,1.1rem); color:#64748b; max-width:560px; text-align:center; line-height:1.8; }
+.bdgs { display:flex; gap:1rem; margin-top:1.5rem; flex-wrap:wrap; justify-content:center; }
+.bdg { padding:.45rem 1.1rem; border-radius:20px; font-size:clamp(.65rem,1vw,.9rem); font-weight:600; }
+.bg-orange { background:#ffedd5; color:#c2410c; }
+.bg-pink   { background:#fce7f3; color:#be185d; }
+.bg-green  { background:#dcfce7; color:#15803d; }
+
+/* S2 concept */
+.ct { font-size:clamp(1.4rem,2.8vw,2.2rem); color:#1e293b; font-weight:700; margin-bottom:2rem; }
+.concept-row { display:flex; gap:2rem; flex-wrap:wrap; justify-content:center; }
+.cc {
+  background:white; border-radius:16px; padding:1.4rem 1.8rem;
+  box-shadow:0 4px 18px rgba(0,0,0,.07); text-align:center;
+  min-width:clamp(130px,16vw,200px);
+}
+.cc .ico { font-size:2rem; margin-bottom:.6rem; }
+.cc h3 { font-size:clamp(.78rem,1.1vw,.95rem); color:#1e293b; font-weight:700; }
+.cc p { font-size:clamp(.62rem,.9vw,.78rem); color:#64748b; margin-top:.4rem; line-height:1.5; }
+
+/* S3 viz */
+.vt { font-size:clamp(1.1rem,2.2vw,1.8rem); color:#1e293b; font-weight:700; margin-bottom:1.5rem; }
+#arr-container {
+  display:flex; gap:clamp(3px,.5vw,8px);
+  align-items:center; justify-content:center;
+  flex-wrap:nowrap;
+}
+.cell {
+  width:clamp(42px,5.5vw,72px); height:clamp(42px,5.5vw,72px);
+  border-radius:12px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  font-size:clamp(.9rem,1.4vw,1.3rem); font-weight:700;
+  position:relative; transition:all .3s;
+  border:2px solid transparent;
+}
+.cell .idx {
+  position:absolute; bottom:-22px;
+  font-size:clamp(.5rem,.7vw,.65rem); color:#94a3b8; font-weight:500;
+}
+.cell-normal  { background:#f1f5f9; color:#334155; border-color:#e2e8f0; }
+.cell-active  { background:linear-gradient(135deg,#f97316,#ec4899); color:white; border-color:transparent; box-shadow:0 4px 16px rgba(249,115,22,.35); }
+.cell-elim    { background:#f8fafc; color:#cbd5e1; border-color:#e2e8f0; }
+.cell-found   { background:linear-gradient(135deg,#22c55e,#16a34a); color:white; border-color:transparent; box-shadow:0 4px 16px rgba(34,197,94,.35); }
+.ptr-row { display:flex; gap:clamp(3px,.5vw,8px); margin-top:28px; }
+.ptr {
+  width:clamp(42px,5.5vw,72px); text-align:center;
+  font-size:clamp(.5rem,.7vw,.65rem); font-weight:700;
+  min-height:18px;
+}
+.ptr-l { color:#f97316; }
+.ptr-m { color:#ec4899; }
+.ptr-r { color:#3b82f6; }
+.search-info {
+  margin-top:1.5rem; display:flex; gap:2rem; flex-wrap:wrap; justify-content:center;
+}
+.sinfo-box {
+  background:white; border-radius:12px; padding:.8rem 1.4rem;
+  box-shadow:0 2px 12px rgba(0,0,0,.06); text-align:center;
+}
+.sinfo-box .label { font-size:clamp(.62rem,.9vw,.78rem); color:#94a3b8; }
+.sinfo-box .val { font-size:clamp(.95rem,1.4vw,1.2rem); font-weight:700; color:#1e293b; margin-top:.2rem; }
+.step-msg { margin-top:1rem; font-size:clamp(.72rem,1.1vw,.9rem); color:#64748b; text-align:center; min-height:1.8em; }
+
+/* S4 */
+.s4t { font-size:clamp(1.5rem,3vw,2.5rem); color:#1e293b; font-weight:800; margin-bottom:1.5rem; }
+.sts { display:flex; gap:2rem; flex-wrap:wrap; justify-content:center; }
+.sc {
+  background:white; border-radius:18px; padding:1.4rem 2rem;
+  box-shadow:0 4px 18px rgba(0,0,0,.07); text-align:center; min-width:130px;
+}
+.sn {
+  font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:800;
+  background:linear-gradient(135deg,#f97316,#ec4899);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.sl { font-size:clamp(.65rem,.9vw,.82rem); color:#94a3b8; margin-top:.3rem; }
+.s4-note { margin-top:1.8rem; font-size:clamp(.78rem,1.1vw,.95rem); color:#64748b; text-align:center; max-width:580px; line-height:1.8; }
+
+/* subtitle */
+#subtitle {
+  position:fixed; bottom:2.5vh; left:50%; transform:translateX(-50%);
+  background:rgba(15,23,42,.82); color:white;
+  padding:.6rem 2rem; border-radius:30px;
+  font-size:clamp(.72rem,1.1vw,.95rem); text-align:center;
+  max-width:80vw; pointer-events:none; z-index:100;
+  backdrop-filter:blur(8px); line-height:1.6;
+}
+#subtitle .en { color:#fdba74; font-size:.85em; }
+.bgc { position:fixed; border-radius:50%; opacity:.05; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="bgc" style="width:480px;height:480px;background:#f97316;top:-160px;right:-140px;"></div>
+<div class="bgc" style="width:320px;height:320px;background:#ec4899;bottom:-80px;left:-80px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">二分查找</div>
+    <div class="t1-en">BINARY SEARCH</div>
+    <div class="t1-desc">在有序数组中，每次比较中间元素，将搜索范围缩小一半，最多只需 O(log n) 次即可找到目标。</div>
+    <div class="bdgs">
+      <span class="bdg bg-orange">时间 O(log n)</span>
+      <span class="bdg bg-pink">空间 O(1)</span>
+      <span class="bdg bg-green">前提：有序数组</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心思想 · Core Concept</div>
+    <div class="concept-row">
+      <div class="cc"><div class="ico">🎯</div><h3>初始范围</h3><p>left=0, right=n-1<br>覆盖整个数组</p></div>
+      <div class="cc"><div class="ico">📍</div><h3>取中间值</h3><p>mid = (left+right)/2<br>比较 arr[mid] 与 target</p></div>
+      <div class="cc"><div class="ico">✂️</div><h3>缩小范围</h3><p>相等则找到；<br>大了向左，小了向右</p></div>
+      <div class="cc"><div class="ico">🔁</div><h3>重复直到</h3><p>找到目标，或<br>left &gt; right（不存在）</p></div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">查找目标值 <span style="color:#f97316">37</span> · Searching for 37</div>
+    <div id="arr-container"></div>
+    <div class="ptr-row" id="ptr-row"></div>
+    <div class="search-info">
+      <div class="sinfo-box"><div class="label">当前 left</div><div class="val" id="v-l">0</div></div>
+      <div class="sinfo-box"><div class="label">当前 mid</div><div class="val" id="v-m">—</div></div>
+      <div class="sinfo-box"><div class="label">当前 right</div><div class="val" id="v-r">—</div></div>
+      <div class="sinfo-box"><div class="label">比较次数</div><div class="val" id="v-cnt">0</div></div>
+    </div>
+    <div class="step-msg" id="step-msg">初始化搜索范围...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">🎯 找到目标 Found!</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">3</div><div class="sl">比较次数 Comparisons</div></div>
+      <div class="sc"><div class="sn">O(log n)</div><div class="sl">时间复杂度 Time</div></div>
+      <div class="sc"><div class="sn">idx=5</div><div class="sl">目标位置 Index</div></div>
+    </div>
+    <div class="s4-note">
+      二分查找每次将搜索空间缩小一半，比线性查找快得多。<br>
+      Binary search halves the search space each step, far faster than linear search.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">二分查找动画演示</div>
+  <div class="en">Binary Search Animation</div>
+</div>
+
+<script>
+const SUB = document.getElementById('subtitle');
+function setSub(cn,en){ SUB.querySelector('.cn').textContent=cn; SUB.querySelector('.en').textContent=en; }
+function setMsg(t){ document.getElementById('step-msg').textContent=t; }
+
+const ARR = [2,5,8,12,16,23,37,45,58,72,91];
+const TARGET = 37;
+const CELLS = [];
+const PTRS  = [];
+
+function buildArr(){
+  const cont = document.getElementById('arr-container');
+  const prow = document.getElementById('ptr-row');
+  cont.innerHTML=''; prow.innerHTML='';
+  ARR.forEach((v,i)=>{
+    const c = document.createElement('div');
+    c.className='cell cell-normal';
+    c.innerHTML = `<span>${v}</span><span class="idx">[${i}]</span>`;
+    c.id='cell-'+i; cont.appendChild(c); CELLS[i]=c;
+    const p = document.createElement('div');
+    p.className='ptr'; p.id='ptr-'+i; prow.appendChild(p); PTRS[i]=p;
+  });
+}
+
+// search steps for ARR target=37 (idx=6)
+const steps = [
+  { l:0, r:10, m:5, state:'init',   msg:'初始范围 [0..10]，中间值 arr[5]=23', en:'Init range [0..10], mid=arr[5]=23' },
+  { l:6, r:10, m:8, state:'right',  msg:'23 < 37，向右搜索 [6..10]，mid=arr[8]=58', en:'23 < 37, search right [6..10], mid=58' },
+  { l:6, r:7,  m:6, state:'left',   msg:'58 > 37，向左搜索 [6..7]，mid=arr[6]=37', en:'58 > 37, search left [6..7], mid=37' },
+  { l:6, r:7,  m:6, state:'found',  msg:'37 == 37 找到目标！索引 = 6', en:'Found! arr[6]=37, index=6' },
+];
+
+let cmpCnt = 0;
+
+function applyStep(s){
+  CELLS.forEach((c,i)=>{
+    c.className='cell';
+    if(s.state==='found' && i===s.m){ c.classList.add('cell-found'); }
+    else if(i===s.m){ c.classList.add('cell-active'); }
+    else if(i<s.l || i>s.r){ c.classList.add('cell-elim'); }
+    else{ c.classList.add('cell-normal'); }
+  });
+  PTRS.forEach((p,i)=>{
+    p.textContent='';
+    if(i===s.l){ p.textContent='L'; p.className='ptr ptr-l'; }
+    if(i===s.m){ p.textContent=(i===s.l?'L/M':'M'); p.className='ptr ptr-m'; }
+    if(i===s.r){ p.textContent=(i===s.m?(p.textContent+'/R'):'R'); p.className='ptr ptr-r'; }
+  });
+  document.getElementById('v-l').textContent=s.l;
+  document.getElementById('v-m').textContent=s.m;
+  document.getElementById('v-r').textContent=s.r;
+  cmpCnt++;
+  document.getElementById('v-cnt').textContent=cmpCnt;
+  setMsg(`步骤 ${cmpCnt}: ${s.msg}`);
+}
+
+const tl = gsap.timeline();
+
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('二分查找：每次淘汰一半，极速定位','Binary Search: Eliminate half each time'));
+tl.from('.t1',{y:-30,opacity:0,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en',{y:20,opacity:0,duration:.6},'<.2');
+tl.from('.t1-desc',{y:20,opacity:0,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('关键：每次比较让搜索范围减半','Key: Each comparison halves the search space'));
+tl.from('.cc',{y:30,opacity:0,stagger:.15,duration:.55,ease:'back.out(1.4)'},'<.3');
+
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{ buildArr(); setSub('有序数组，查找目标值 37','Sorted array, searching for target 37'); cmpCnt=0; });
+tl.from('#arr-container .cell',{scaleY:0,transformOrigin:'bottom',stagger:.05,duration:.4,ease:'back.out(1.3)'},'<.3');
+
+steps.forEach((s,i)=>{
+  tl.add(()=>{ applyStep(s); setSub(s.msg, s.en); },'+='+( i===0?.8:2.2));
+  tl.from(CELLS.filter((_,idx)=>idx===s.m),{scale:1.2,duration:.3},'<');
+});
+
+tl.to('#s3',{opacity:0,duration:.5},'+=2.5');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('只需 3 次比较即找到目标，效率极高','Found in only 3 comparisons — extremely efficient'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{ setTimeout(()=>{ gsap.set('.scene',{opacity:0}); tl.restart(); },6000); });
+</script>
+</body>
+</html>

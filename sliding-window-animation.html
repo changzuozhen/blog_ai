@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>滑动窗口 最长无重复子串 Sliding Window</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:100vw;height:100vh;background:#fafbfc;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#stage{width:90vw;max-width:1400px;height:84vh;position:relative;}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
+
+.t1{font-size:clamp(1.8rem,3.5vw,3.2rem);font-weight:800;background:linear-gradient(135deg,#06b6d4,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem;}
+.t1-sub{font-size:clamp(.9rem,1.8vw,1.5rem);color:#06b6d4;font-weight:700;margin-bottom:.6rem;}
+.t1-en{font-size:clamp(.72rem,1.3vw,1.2rem);color:#94a3b8;letter-spacing:3px;margin-bottom:1.2rem;}
+.t1-desc{font-size:clamp(.78rem,1.2vw,.98rem);color:#64748b;max-width:580px;text-align:center;line-height:1.8;}
+.bdgs{display:flex;gap:1rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center;}
+.bdg{padding:.4rem 1rem;border-radius:20px;font-size:clamp(.58rem,.85vw,.78rem);font-weight:600;}
+.b1{background:#cffafe;color:#155e75;}.b2{background:#ede9fe;color:#5b21b6;}.b3{background:#dcfce7;color:#15803d;}
+
+.ct{font-size:clamp(1.2rem,2.4vw,1.9rem);color:#1e293b;font-weight:700;margin-bottom:1.5rem;}
+.algo-box{background:white;border-radius:18px;padding:1.4rem 2rem;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:1.5rem;max-width:600px;width:100%;}
+.code{font-family:'Courier New',monospace;font-size:clamp(.68rem,1vw,.88rem);line-height:1.9;color:#334155;}
+.code .kw{color:#7c3aed;font-weight:700;}
+.code .cm{color:#94a3b8;}
+.code .fn{color:#0891b2;}
+.code .hl{background:#fef9c3;border-radius:3px;padding:1px 3px;}
+.concept-pills{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+.pill{background:white;border-radius:12px;padding:.7rem 1.2rem;box-shadow:0 3px 12px rgba(0,0,0,.07);text-align:center;}
+.pill .pico{font-size:1.5rem;margin-bottom:.3rem;}
+.pill h4{font-size:clamp(.7rem,1vw,.85rem);font-weight:700;color:#1e293b;}
+.pill p{font-size:clamp(.58rem,.78vw,.72rem);color:#64748b;margin-top:.2rem;}
+
+.vt{font-size:clamp(.95rem,1.8vw,1.5rem);color:#1e293b;font-weight:700;margin-bottom:1rem;}
+.str-display{display:flex;gap:clamp(3px,.5vw,8px);align-items:center;justify-content:center;margin-bottom:1.2rem;}
+.char-box{
+  width:clamp(36px,4.5vw,60px);height:clamp(36px,4.5vw,60px);
+  border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:clamp(.9rem,1.5vw,1.3rem);font-weight:800;position:relative;
+  border:2px solid #e2e8f0;background:#f8fafc;color:#334155;
+  transition:all .3s;
+}
+.char-box .cidx{position:absolute;bottom:-20px;font-size:clamp(.48rem,.65vw,.6rem);color:#94a3b8;}
+.cb-window{background:#e0f2fe;border-color:#0ea5e9;color:#0369a1;box-shadow:0 3px 12px rgba(14,165,233,.25);}
+.cb-conflict{background:#fee2e2;border-color:#ef4444;color:#991b1b;}
+.cb-visited{background:#f0fdf4;border-color:#22c55e;color:#15803d;}
+
+.window-vis{
+  display:flex;align-items:center;justify-content:center;gap:1.5rem;
+  margin-bottom:.8rem;flex-wrap:wrap;
+}
+.wv-box{background:white;border-radius:12px;padding:.7rem 1.2rem;box-shadow:0 2px 10px rgba(0,0,0,.06);text-align:center;}
+.wv-label{font-size:clamp(.58rem,.78vw,.72rem);color:#94a3b8;}
+.wv-val{font-size:clamp(.88rem,1.3vw,1.1rem);font-weight:700;color:#1e293b;margin-top:.2rem;}
+.wv-val.hl{color:#06b6d4;}
+
+.window-str{
+  background:white;border-radius:12px;padding:.6rem 1.2rem;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);font-size:clamp(.78rem,1.1vw,.95rem);font-weight:600;color:#1e293b;
+  text-align:center;margin-bottom:.5rem;letter-spacing:2px;
+}
+.step-msg5{font-size:clamp(.62rem,.88vw,.8rem);color:#64748b;text-align:center;min-height:1.8em;}
+
+.s4t{font-size:clamp(1.3rem,2.6vw,2.1rem);color:#1e293b;font-weight:800;margin-bottom:1.2rem;}
+.sts{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.sc{background:white;border-radius:18px;padding:1.2rem 1.6rem;box-shadow:0 4px 18px rgba(0,0,0,.07);text-align:center;min-width:110px;}
+.sn{font-size:clamp(1.4rem,2.8vw,2.2rem);font-weight:800;background:linear-gradient(135deg,#06b6d4,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sl{font-size:clamp(.56rem,.78vw,.72rem);color:#94a3b8;margin-top:.3rem;}
+.s4-note{margin-top:1.5rem;font-size:clamp(.7rem,.95vw,.88rem);color:#64748b;text-align:center;max-width:580px;line-height:1.8;}
+
+#subtitle{position:fixed;bottom:2.5vh;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.82);color:white;padding:.55rem 1.8rem;border-radius:28px;font-size:clamp(.65rem,.95vw,.88rem);text-align:center;max-width:80vw;pointer-events:none;z-index:100;backdrop-filter:blur(8px);line-height:1.6;}
+#subtitle .en{color:#67e8f9;font-size:.85em;}
+.bgc{position:fixed;border-radius:50%;opacity:.05;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="bgc" style="width:500px;height:500px;background:#06b6d4;top:-170px;right:-150px;"></div>
+<div class="bgc" style="width:340px;height:340px;background:#8b5cf6;bottom:-100px;left:-90px;"></div>
+
+<div id="stage">
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div class="t1">滑动窗口</div>
+    <div class="t1-sub">最长无重复子串</div>
+    <div class="t1-en">SLIDING WINDOW · LONGEST UNIQUE SUBSTRING</div>
+    <div class="t1-desc">维护一个可变大小的窗口，right 指针不断扩展，遇到重复字符时 left 收缩，在 O(n) 时间内求解最优子串。</div>
+    <div class="bdgs">
+      <span class="bdg b1">时间 O(n)</span>
+      <span class="bdg b2">空间 O(∑)</span>
+      <span class="bdg b3">双指针技巧</span>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div class="ct">核心思想 · Core Concept</div>
+    <div class="algo-box">
+      <div class="code">
+        <span class="kw">int</span> <span class="fn">lengthOfLongestSubstring</span>(<span class="kw">String</span> s) {<br>
+        &nbsp;&nbsp;<span class="kw">Map</span>&lt;Character, Integer&gt; map = <span class="kw">new</span> HashMap&lt;&gt;();<br>
+        &nbsp;&nbsp;<span class="kw">int</span> left = 0, <span class="hl">maxLen = 0</span>;<br>
+        &nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">int</span> right = 0; right &lt; s.length(); right++) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">// 遇到重复字符，收缩左边界</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (map.containsKey(s[right]))<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;left = <span class="fn">max</span>(left, map.get(s[right]) + 1);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;map.put(s[right], right);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;maxLen = <span class="fn">max</span>(maxLen, right - left + 1);<br>
+        &nbsp;&nbsp;}<br>
+        &nbsp;&nbsp;<span class="kw">return</span> maxLen;<br>
+        }
+      </div>
+    </div>
+    <div class="concept-pills">
+      <div class="pill"><div class="pico">🪟</div><h4>窗口扩张</h4><p>right++，将字符加入窗口</p></div>
+      <div class="pill"><div class="pico">⚡</div><h4>冲突收缩</h4><p>遇重复字符，left 跳过</p></div>
+      <div class="pill"><div class="pico">📏</div><h4>更新最大值</h4><p>每步更新 maxLen</p></div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <div class="vt">字符串 "a b c a b c b b" 演示</div>
+    <div class="str-display" id="str-display"></div>
+    <div class="window-vis">
+      <div class="wv-box"><div class="wv-label">left 指针</div><div class="wv-val hl" id="v-left">0</div></div>
+      <div class="wv-box"><div class="wv-label">right 指针</div><div class="wv-val hl" id="v-right">-1</div></div>
+      <div class="wv-box"><div class="wv-label">当前窗口</div><div class="wv-val" id="v-window">—</div></div>
+      <div class="wv-box"><div class="wv-label">最大长度</div><div class="wv-val hl" id="v-maxlen">0</div></div>
+    </div>
+    <div class="window-str" id="window-str">窗口: 空</div>
+    <div class="step-msg5" id="step-msg5">准备开始滑动窗口演示...</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <div class="s4t">🏆 最长无重复子串</div>
+    <div class="sts">
+      <div class="sc"><div class="sn">3</div><div class="sl">最长长度 Max Length</div></div>
+      <div class="sc"><div class="sn">"abc"</div><div class="sl">最长子串 Substring</div></div>
+      <div class="sc"><div class="sn">O(n)</div><div class="sl">时间复杂度 Time</div></div>
+    </div>
+    <div class="s4-note">
+      滑动窗口是高频技巧，适用于求子数组/子串的最大/最小/满足条件的结果，右扩左缩一次遍历完成。<br>
+      Sliding window is a top technique for subarray/substring optimization — one pass with right expand, left shrink.
+    </div>
+  </div>
+</div>
+
+<div id="subtitle">
+  <div class="cn">滑动窗口·最长无重复子串动画演示</div>
+  <div class="en">Sliding Window · Longest Unique Substring Animation</div>
+</div>
+
+<script>
+const SUB=document.getElementById('subtitle');
+function setSub(cn,en){SUB.querySelector('.cn').textContent=cn;SUB.querySelector('.en').textContent=en;}
+function setMsg5(t){document.getElementById('step-msg5').textContent=t;}
+
+const STR=['a','b','c','a','b','c','b','b'];
+const charBoxes=[];
+
+function buildStr(){
+  const cont=document.getElementById('str-display');
+  cont.innerHTML='';
+  STR.forEach((ch,i)=>{
+    const b=document.createElement('div');
+    b.className='char-box';
+    b.innerHTML=`<span>${ch}</span><span class="cidx">[${i}]</span>`;
+    b.id='cb-'+i; cont.appendChild(b); charBoxes[i]=b;
+  });
+}
+
+function setChar(i,cls){
+  charBoxes[i].className='char-box '+(cls||'');
+}
+
+// Manual steps for "abcabcbb", showing window movement
+// Result: "abc" length 3
+const steps=[
+  {l:0,r:0,conflict:false,msg:'right=0，加入 "a"，窗口=[a]',en:'right=0, add "a", window=[a]'},
+  {l:0,r:1,conflict:false,msg:'right=1，加入 "b"，窗口=[a,b]',en:'right=1, add "b", window=[a,b]'},
+  {l:0,r:2,conflict:false,msg:'right=2，加入 "c"，窗口=[a,b,c]，最大=3',en:'right=2, add "c", window=[a,b,c], max=3'},
+  {l:1,r:3,conflict:true, msg:'right=3，"a"重复！left 移到1，窗口=[b,c,a]',en:'right=3, "a" repeats! left→1, window=[b,c,a]'},
+  {l:2,r:4,conflict:true, msg:'right=4，"b"重复！left 移到2，窗口=[c,a,b]',en:'right=4, "b" repeats! left→2, window=[c,a,b]'},
+  {l:3,r:5,conflict:true, msg:'right=5，"c"重复！left 移到3，窗口=[a,b,c]',en:'right=5, "c" repeats! left→3, window=[a,b,c]'},
+  {l:5,r:6,conflict:true, msg:'right=6，"b"重复！left 移到5，窗口=[c,b]',en:'right=6, "b" repeats! left→5, window=[c,b]'},
+  {l:7,r:7,conflict:true, msg:'right=7，"b"重复！left 移到7，窗口=[b]',en:'right=7, "b" repeats! left→7, window=[b]'},
+];
+
+const maxLenArr=[1,2,3,3,3,3,3,3];
+const windowStrs=['[a]','[a,b]','[a,b,c]','[b,c,a]','[c,a,b]','[a,b,c]','[c,b]','[b]'];
+
+const tl=gsap.timeline();
+
+// S1
+tl.to('#s1',{opacity:1,duration:.8});
+tl.add(()=>setSub('滑动窗口：右扩左缩，O(n)求最长无重复子串','Sliding Window: Right expand, left shrink, O(n)'));
+tl.from('.t1,.t1-sub',{y:-30,opacity:0,stagger:.15,duration:.7,ease:'back.out(1.4)'},'<');
+tl.from('.t1-en,.t1-desc',{y:20,opacity:0,stagger:.2,duration:.6},'<.2');
+tl.from('.bdg',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.3');
+
+// S2
+tl.to('#s1',{opacity:0,duration:.5},'+=4');
+tl.to('#s2',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('核心：哈希表记录字符上次出现位置','Core: HashMap records last seen position'));
+tl.from('.algo-box',{y:20,opacity:0,duration:.6},'<.3');
+tl.from('.pill',{scale:0,opacity:0,stagger:.15,duration:.4,ease:'back.out(1.5)'},'<.4');
+
+// S3
+tl.to('#s2',{opacity:0,duration:.5},'+=5');
+tl.to('#s3',{opacity:1,duration:.5},'<.2');
+tl.add(()=>{buildStr();setSub('字符串 "abcabcbb"，寻找最长无重复子串','String "abcabcbb", find longest unique substring');setMsg5('初始化...');});
+tl.from('.char-box',{scale:0,opacity:0,stagger:.08,duration:.35,ease:'back.out(1.5)'},'<.3');
+
+steps.forEach((s,si)=>{
+  tl.add(()=>{
+    // Reset all
+    charBoxes.forEach((_,i)=>{ setChar(i,(i>=s.l&&i<=s.r)?'cb-window':''); });
+    if(s.conflict){ setChar(s.r,'cb-conflict'); setTimeout(()=>setChar(s.r,'cb-window'),400); }
+    // Mark visited before window
+    for(let i=0;i<s.l;i++) setChar(i,'cb-visited');
+
+    document.getElementById('v-left').textContent=s.l;
+    document.getElementById('v-right').textContent=s.r;
+    document.getElementById('v-window').textContent=`[${s.l}..${s.r}]`;
+    document.getElementById('v-maxlen').textContent=maxLenArr[si];
+    document.getElementById('window-str').textContent='窗口: '+windowStrs[si];
+    setMsg5(`步骤${si+1}: ${s.msg}`);
+    setSub(s.msg,s.en);
+  },'+=2');
+});
+
+tl.add(()=>{
+  setSub('最终答案：最长无重复子串长度为 3（"abc"）','Final: Longest unique substring length = 3 ("abc")');
+  setMsg5('✓ 完成！最长无重复子串 "abc"，长度 = 3');
+},'+=1.5');
+
+// S4
+tl.to('#s3',{opacity:0,duration:.5},'+=1.5');
+tl.to('#s4',{opacity:1,duration:.5},'<.2');
+tl.add(()=>setSub('滑动窗口：面试高频，一次遍历解决','Sliding Window: Interview favorite, single-pass solution'));
+tl.from('.sc',{scale:.8,opacity:0,stagger:.15,duration:.5,ease:'back.out(1.5)'},'<.3');
+tl.from('.s4-note',{y:20,opacity:0,duration:.5},'<.3');
+
+tl.add(()=>{setTimeout(()=>{gsap.set('.scene',{opacity:0});tl.restart();},6000);});
+</script>
+</body>
+</html>
